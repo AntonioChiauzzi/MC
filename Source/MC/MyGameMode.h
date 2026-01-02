@@ -15,7 +15,7 @@ public:
 
 private:
     UPROPERTY()
-    WorldStateManager* WorldManager;
+    UWorldStateManager* WorldManager;
 
     FTimerHandle SaveTimerHandle;
 

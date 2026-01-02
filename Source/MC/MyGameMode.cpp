@@ -1,10 +1,11 @@
 #include "MyGameMode.h"
+#include "WorldStateManager.h"
 
 void AMyGameMode::BeginPlay()
 {
     Super::BeginPlay();
 
-    WorldManager = NewObject<WorldStateManager>(this);
+    WorldManager = NewObject<UWorldStateManager>(this);
     WorldManager->Initialize(GetWorld());
 
     WorldManager->LoadEnvironment();

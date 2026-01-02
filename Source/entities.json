@@ -15,7 +15,7 @@
     },
     {
       "id": "id02",
-      "nome": "Tractor",
+      "nome": "Tractor1",
       "class": "ATractorPawn",
       "location": {
         "x": 25,
@@ -24,6 +24,42 @@
       },
       "params": {
         "speed": 10
+      }
+    },{
+      "id": "id03",
+      "nome": "WeatherStation",
+      "class": "AWeatherStationPawn",
+      "location": {
+        "x": 55,
+        "y": 80,
+        "z": 0
+      },
+      "params": {
+        "speed" : 0
+      }
+    },{
+      "id": "id04",
+      "nome": "Tractor2",
+      "class": "ATractorPawn",
+      "location": {
+        "x": 500,
+        "y": 400,
+        "z": 0
+      },
+      "params": {
+        "speed": 0
+      }
+    },{
+      "id": "id05",
+      "nome": "SoilSensor",
+      "class": "ASoilSensorPawn",
+      "location": {
+        "x": 500,
+        "y": 400,
+        "z": 0
+      },
+      "params": {
+        "speed": 0
       }
     }
   ]

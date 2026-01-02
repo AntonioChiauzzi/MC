@@ -5,7 +5,7 @@
 #include "WorldStateManager.generated.h"
 
 UCLASS()
-class MC_API WorldStateManager : public UObject
+class MC_API UWorldStateManager : public UObject
 {
     GENERATED_BODY()
 
@@ -25,11 +25,5 @@ private:
     TMap<FString, TSubclassOf<AActor>> ClassRegistry;
 
     void RegisterClasses();
-
-    void LoadEnvironment();
-
-    void LoadEntities();
-    
-    void SaveEntities();
 };
 

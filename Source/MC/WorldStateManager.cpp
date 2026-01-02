@@ -6,18 +6,18 @@
 #include "Misc/Paths.h"
 
 
-void WorldStateManager::Initialize(UWorld* InWorld)
+void UWorldStateManager::Initialize(UWorld* InWorld)
 {
     World = InWorld;
     RegisterClasses();
 }
 
-void WorldStateManager::RegisterClasses()
+void UWorldStateManager::RegisterClasses()
 {
     //ClassRegistry.Add("Pawn", APawn::StaticClass());
 }
 
-void WorldStateManager::LoadEnvironment()
+void UWorldStateManager::LoadEnvironment()
 {
     FString JsonString;
     FFileHelper::LoadFileToString(
@@ -27,9 +27,9 @@ void WorldStateManager::LoadEnvironment()
 }
 
 
-void WorldStateManager::LoadEntities()
+void UWorldStateManager::LoadEntities()
 {
-    FString JsonString;
+    /*FString JsonString;
     FFileHelper::LoadFileToString(
         JsonString,
         *(FPaths::ProjectContentDir() + "Source/entities.json")
@@ -86,13 +86,13 @@ void WorldStateManager::LoadEntities()
                 );
             }
         }
-    }
+    }*/
 }
 
 
-void WorldStateManager::SaveEntities()
+void UWorldStateManager::SaveEntities()
 {
-    TSharedPtr<FJsonObject> Root = MakeShared<FJsonObject>();
+    /*TSharedPtr<FJsonObject> Root = MakeShared<FJsonObject>();
     TArray<TSharedPtr<FJsonValue>> EntitiesArray;
 
     for (AActor* Actor : SpawnedEntities)
@@ -144,7 +144,7 @@ void WorldStateManager::SaveEntities()
     FFileHelper::SaveStringToFile(
         Output,
         *(FPaths::ProjectContentDir() + "Source/entities.json")
-    );
+    );*/
 }
 
 
