@@ -1,0 +1,30 @@
+{
+  "entities": [
+    {
+      "id": "id01",
+      "nome": "Drone",
+      "class": "ADronePawn",
+      "location": {
+        "x": 0,
+        "y": 0,
+        "z": 100
+      },
+      "params": {
+        "speed": 300
+      }
+    },
+    {
+      "id": "id02",
+      "nome": "Tractor",
+      "class": "ATractorPawn",
+      "location": {
+        "x": 25,
+        "y": 30,
+        "z": 0
+      },
+      "params": {
+        "speed": 10
+      }
+    }
+  ]
+}

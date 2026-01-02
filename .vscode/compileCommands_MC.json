@@ -22,5 +22,37 @@
 			"@C:\\Users\\anton\\Documents\\Unreal Projects\\MC\\.vscode\\compileCommands_MC\\MC.1.rsp"
 		],
 		"directory": "C:\\Program Files\\Epic Games\\UE_5.7\\Engine\\Source"
+	},
+	{
+		"file": "C:\\Users\\anton\\Documents\\Unreal Projects\\MC\\Source\\MC\\MyGameMode.cpp",
+		"arguments": [
+			"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\Hostx64\\x64\\cl.exe",
+			"@C:\\Users\\anton\\Documents\\Unreal Projects\\MC\\.vscode\\compileCommands_MC\\MC.1.rsp"
+		],
+		"directory": "C:\\Program Files\\Epic Games\\UE_5.7\\Engine\\Source"
+	},
+	{
+		"file": "C:\\Users\\anton\\Documents\\Unreal Projects\\MC\\Source\\MC\\MyGameMode.h",
+		"arguments": [
+			"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\Hostx64\\x64\\cl.exe",
+			"@C:\\Users\\anton\\Documents\\Unreal Projects\\MC\\.vscode\\compileCommands_MC\\MC.1.rsp"
+		],
+		"directory": "C:\\Program Files\\Epic Games\\UE_5.7\\Engine\\Source"
+	},
+	{
+		"file": "C:\\Users\\anton\\Documents\\Unreal Projects\\MC\\Source\\MC\\WorldStateManager.cpp",
+		"arguments": [
+			"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\Hostx64\\x64\\cl.exe",
+			"@C:\\Users\\anton\\Documents\\Unreal Projects\\MC\\.vscode\\compileCommands_MC\\MC.1.rsp"
+		],
+		"directory": "C:\\Program Files\\Epic Games\\UE_5.7\\Engine\\Source"
+	},
+	{
+		"file": "C:\\Users\\anton\\Documents\\Unreal Projects\\MC\\Source\\MC\\WorldStateManager.h",
+		"arguments": [
+			"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\Hostx64\\x64\\cl.exe",
+			"@C:\\Users\\anton\\Documents\\Unreal Projects\\MC\\.vscode\\compileCommands_MC\\MC.1.rsp"
+		],
+		"directory": "C:\\Program Files\\Epic Games\\UE_5.7\\Engine\\Source"
 	}
 ]

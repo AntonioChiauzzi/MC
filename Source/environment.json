@@ -1,0 +1,18 @@
+{
+  "environment": {
+    "type": "flat",
+    "soilTemperature": 20,
+    "soilHumidity": 70,
+    "soilSolarIrradiance": 400,
+    "wind": 30,
+    "airTemperature": 20,
+    "airHumidity": 70,
+    "chemicalCompositionSoil": {
+      "mineral": 45,
+      "organic": 5,
+      "air": 25,
+      "water": 25
+    },
+    "soilpH": 7
+  }
+}
