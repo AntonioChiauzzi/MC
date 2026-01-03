@@ -20,10 +20,101 @@ void UWorldStateManager::RegisterClasses()
 void UWorldStateManager::LoadEnvironment()
 {
     FString JsonString;
-    FFileHelper::LoadFileToString(
-        JsonString,
-        *(FPaths::ProjectContentDir() + "Source/environment.json")
-    );
+    const FString FilePath = FPaths::ProjectContentDir() + TEXT("Data/environment.json");
+
+    if (!FFileHelper::LoadFileToString(JsonString, *FilePath))
+    {
+        UE_LOG(LogTemp, Error, TEXT("Cannot load environment.json"));
+        return;
+    }
+
+    TSharedPtr<FJsonObject> RootJson;
+    TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(JsonString);
+
+    if (!FJsonSerializer::Deserialize(Reader, RootJson) || !RootJson.IsValid())
+    {
+        UE_LOG(LogTemp, Error, TEXT("Invalid JSON"));
+        return;
+    }
+
+    const TSharedPtr<FJsonObject>* EnvJson;
+
+    if (!RootJson->TryGetObjectField(TEXT("environment"), EnvJson))
+    {
+        UE_LOG(LogTemp, Error, TEXT("Missing environment object"));
+        return;
+    }
+
+    if (!Environment)
+    {
+        Environment = NewObject<UMyEnvironmentState>(this);
+    }
+
+    Environment->SoilTemperature = (*EnvJson)->GetNumberField(TEXT("soilTemperature"));
+    Environment->SoilHumidity = (*EnvJson)->GetNumberField(TEXT("soilHumidity"));
+    Environment->SoilSolarIrradiance = (*EnvJson)->GetNumberField(TEXT("soilSolarIrradiance"));
+    Environment->SoilpH = (*EnvJson)->GetNumberField(TEXT("soilpH"));
+    Environment->WindSpeed = (*EnvJson)->GetNumberField(TEXT("windSpeed"));
+    Environment->AirTemperature = (*EnvJson)->GetNumberField(TEXT("airTemperature"));
+    Environment->AirHumidity = (*EnvJson)->GetNumberField(TEXT("airHumidity"));
+
+    Environment->SoilChemicalComposition.Empty();
+
+    const TSharedPtr<FJsonObject>* ChemJson;
+    if ((*EnvJson)->TryGetObjectField(TEXT("soilChemicalComposition"), ChemJson))
+    {
+        for (const auto& Elem : (*ChemJson)->Values)
+        {
+            Environment->SoilChemicalComposition.Add(
+                Elem.Key,
+                Elem.Value->AsNumber()
+            );
+        }
+    }
+
+    UE_LOG(LogTemp, Log, TEXT("Environment loaded correctly"));
+}
+
+
+void UWorldStateManager::SaveEnvironment() const
+{
+    if (!Environment) return;
+
+    TSharedPtr<FJsonObject> EnvJson = MakeShared<FJsonObject>();
+
+    EnvJson->SetNumberField("air_temperature", Environment->AirTemperature);
+    EnvJson->SetNumberField("air_humidity", Environment->AirHumidity);
+    EnvJson->SetNumberField("wind_speed", Environment->WindSpeed);
+
+    EnvJson->SetNumberField("soil_temperature", Environment->SoilTemperature);
+    EnvJson->SetNumberField("soil_humidity", Environment->SoilHumidity);
+    EnvJson->SetNumberField("soil_solar_irradiance",
+                            Environment->SoilSolarIrradiance);
+    EnvJson->SetNumberField("soil_ph", Environment->SoilpH);
+
+    TSharedPtr<FJsonObject> ChemJson = MakeShared<FJsonObject>();
+    for (const auto& Elem : Environment->SoilChemicalComposition)
+    {
+        ChemJson->SetNumberField(Elem.Key, Elem.Value);
+    }
+
+    EnvJson->SetObjectField("soilChemicalComposition", ChemJson);
+
+    TSharedPtr<FJsonObject> RootJson = MakeShared<FJsonObject>();
+    RootJson->SetObjectField("environment", EnvJson);
+
+    FString OutputString;
+    TSharedRef<TJsonWriter<>> Writer =
+        TJsonWriterFactory<>::Create(&OutputString);
+
+    FJsonSerializer::Serialize(RootJson.ToSharedRef(), Writer);
+
+    const FString FilePath =
+        FPaths::ProjectContentDir() + TEXT("Data/environment.json");
+
+    FFileHelper::SaveStringToFile(OutputString, *FilePath);
+
+    UE_LOG(LogTemp, Log, TEXT("Environment saved"));
 }
 
 
@@ -32,7 +123,7 @@ void UWorldStateManager::LoadEntities()
     /*FString JsonString;
     FFileHelper::LoadFileToString(
         JsonString,
-        *(FPaths::ProjectContentDir() + "Source/entities.json")
+        *(FPaths::ProjectContentDir() + "Data/entities.json")
     );
 
     TSharedPtr<FJsonObject> Root;
@@ -143,7 +234,7 @@ void UWorldStateManager::SaveEntities()
 
     FFileHelper::SaveStringToFile(
         Output,
-        *(FPaths::ProjectContentDir() + "Source/entities.json")
+        *(FPaths::ProjectContentDir() + "Data/entities.json")
     );*/
 }
 

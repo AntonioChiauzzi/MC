@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
+#include "MyEnvironmentState.h"
 #include "WorldStateManager.generated.h"
 
 UCLASS()
@@ -13,6 +14,10 @@ public:
     void Initialize(UWorld* InWorld);
 
     void LoadEnvironment();
+    void SaveEnvironment() const;
+
+    UMyEnvironmentState* GetEnvironment() const;
+
     void LoadEntities();
     void SaveEntities();
 
@@ -21,6 +26,9 @@ private:
 
     UPROPERTY()
     TArray<AActor*> SpawnedEntities;
+
+    UPROPERTY()
+    UMyEnvironmentState* Environment;
 
     TMap<FString, TSubclassOf<AActor>> ClassRegistry;
 
