@@ -16,6 +16,22 @@
 		"directory": "C:\\Program Files\\Epic Games\\UE_5.7\\Engine\\Source"
 	},
 	{
+		"file": "C:\\Users\\anton\\Documents\\Unreal Projects\\MC\\Source\\MC\\EntityConfigurable.cpp",
+		"arguments": [
+			"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\Hostx64\\x64\\cl.exe",
+			"@C:\\Users\\anton\\Documents\\Unreal Projects\\MC\\.vscode\\compileCommands_Default\\MC.1.rsp"
+		],
+		"directory": "C:\\Program Files\\Epic Games\\UE_5.7\\Engine\\Source"
+	},
+	{
+		"file": "C:\\Users\\anton\\Documents\\Unreal Projects\\MC\\Source\\MC\\EntityConfigurable.h",
+		"arguments": [
+			"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\Hostx64\\x64\\cl.exe",
+			"@C:\\Users\\anton\\Documents\\Unreal Projects\\MC\\.vscode\\compileCommands_Default\\MC.1.rsp"
+		],
+		"directory": "C:\\Program Files\\Epic Games\\UE_5.7\\Engine\\Source"
+	},
+	{
 		"file": "C:\\Users\\anton\\Documents\\Unreal Projects\\MC\\Source\\MC\\GroundSensorActor.cpp",
 		"arguments": [
 			"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\Hostx64\\x64\\cl.exe",

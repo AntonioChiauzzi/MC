@@ -5,6 +5,12 @@
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 
+#include "TractorPawn.h"
+#include "DronePawn.h"
+#include "GroundSensorActor.h"
+#include "WeatherStationActor.h"
+#include "EntityConfigurable.h"
+
 
 void UWorldStateManager::Initialize(UWorld* InWorld)
 {
@@ -14,7 +20,10 @@ void UWorldStateManager::Initialize(UWorld* InWorld)
 
 void UWorldStateManager::RegisterClasses()
 {
-    //ClassRegistry.Add("Pawn", APawn::StaticClass());
+    EntityClassRegistry.Add("Tractor", ATractorPawn::StaticClass());
+    EntityClassRegistry.Add("Drone", ADronePawn::StaticClass());
+    EntityClassRegistry.Add("GroundSensor", AGroundSensorActor::StaticClass());
+    EntityClassRegistry.Add("WeatherStation", AWeatherStationActor::StaticClass());
 }
 
 void UWorldStateManager::LoadEnvironment()
@@ -120,65 +129,44 @@ void UWorldStateManager::SaveEnvironment() const
 
 void UWorldStateManager::LoadEntities()
 {
-    /*FString JsonString;
-    FFileHelper::LoadFileToString(
-        JsonString,
-        *(FPaths::ProjectContentDir() + "Data/entities.json")
-    );
+    FString Json;
+    FFileHelper::LoadFileToString(Json,
+        *(FPaths::ProjectContentDir() + "Data/entities.json"));
 
     TSharedPtr<FJsonObject> Root;
-    TSharedRef<TJsonReader<>> Reader =
-        TJsonReaderFactory<>::Create(JsonString);
+    FJsonSerializer::Deserialize(
+        TJsonReaderFactory<>::Create(Json), Root);
 
-    if (!FJsonSerializer::Deserialize(Reader, Root))
-        return;
+    const auto& Arr = Root->GetArrayField(TEXT("entities"));
 
-    const TArray<TSharedPtr<FJsonValue>> Entities =
-        Root->GetArrayField("entities");
-
-    for (const auto& Value : Entities)
+    for (const auto& V : Arr)
     {
-        TSharedPtr<FJsonObject> Obj = Value->AsObject();
+        auto Obj = V->AsObject();
+        FString Type = Obj->GetStringField(TEXT("type"));
 
-        FString ClassName = Obj->GetStringField("class");
-        if (!ClassRegistry.Contains(ClassName))
-            continue;
+        if (!EntityClassRegistry.Contains(Type)) continue;
 
-        FVector Location = FVector::ZeroVector;
-        if (Obj->HasField("location"))
-        {
-            auto Loc = Obj->GetObjectField("location");
-            Location.X = Loc->GetNumberField("x");
-            Location.Y = Loc->GetNumberField("y");
-            Location.Z = Loc->GetNumberField("z");
-        }
-
-        AActor* Actor = World->SpawnActor<AActor>(
-            ClassRegistry[ClassName],
-            Location,
-            FRotator::ZeroRotator
+        auto L = Obj->GetObjectField(TEXT("location"));
+        FVector Loc(
+            L->GetNumberField(TEXT("x")),
+            L->GetNumberField(TEXT("y")),
+            L->GetNumberField(TEXT("z"))
         );
 
-        if (!Actor)
-            continue;
+        AActor* A = GetWorld()->SpawnActor<AActor>(
+            EntityClassRegistry[Type], Loc, FRotator::ZeroRotator);
 
-        SpawnedEntities.Add(Actor);
+        if (AMyBasePawn* BP = Cast<AMyBasePawn>(A))
+            BP->PawnID = Obj->GetStringField(TEXT("id"));
 
-        if (ABasePawn* Pawn = Cast<ABasePawn>(Actor))
-        {
-            Pawn->SetEntityId(
-                Obj->GetStringField("id")
-            );
-
-            if (Obj->HasField("params"))
+        if (A->GetClass()->ImplementsInterface(UEntityConfigurable::StaticClass()))
+            if (IEntityConfigurable* Configurable = Cast<IEntityConfigurable>(A))
             {
-                Pawn->InitializeFromData(
-                    Obj->GetObjectField("params")
-                );
+                Configurable->ConfigureFromJson(Obj);
             }
-        }
-    }*/
+    }
 }
+
 
 
 void UWorldStateManager::SaveEntities()

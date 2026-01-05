@@ -2,15 +2,26 @@
 
 ATractorPawn::ATractorPawn()
 {
-    Velocity = FVector(100.f, 0.f, 0.f);
+    Velocity = FVector::ZeroVector;
 }
 
 void ATractorPawn::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
+    SetActorLocation(GetActorLocation() + Velocity * DeltaTime);
+}
 
-    FVector NewLocation =
-        GetActorLocation() + Velocity * DeltaTime;
+void ATractorPawn::ConfigureFromJson(const TSharedPtr<FJsonObject>& Json)
+{
+    if (!Json->HasField(TEXT("params"))) return;
+    auto Params = Json->GetObjectField(TEXT("params"));
 
-    SetActorLocation(NewLocation);
+    if (!Params->HasField(TEXT("speed"))) return;
+    auto Speed = Params->GetObjectField(TEXT("speed"));
+
+    Velocity = FVector(
+        Speed->GetNumberField(TEXT("x")),
+        Speed->GetNumberField(TEXT("y")),
+        Speed->GetNumberField(TEXT("z"))
+    );
 }

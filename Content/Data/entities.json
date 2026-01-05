@@ -2,64 +2,77 @@
   "entities": [
     {
       "id": "id01",
-      "nome": "Drone",
-      "class": "ADronePawn",
+      "type": "Drone",
       "location": {
         "x": 0,
         "y": 0,
         "z": 100
       },
       "params": {
-        "speed": 300
+        "speed": {
+          "x": 30,
+          "y": 10,
+          "z": 1
+        }
       }
     },
     {
       "id": "id02",
-      "nome": "Tractor1",
-      "class": "ATractorPawn",
+      "type": "Tractor",
       "location": {
         "x": 25,
         "y": 30,
         "z": 0
       },
       "params": {
-        "speed": 10
+        "speed": {
+          "x": 10,
+          "y": 5,
+          "z": 0
+        }
       }
-    },{
+    },
+    {
       "id": "id03",
-      "nome": "WeatherStation",
-      "class": "AWeatherStationPawn",
+      "type": "WeatherStation",
       "location": {
         "x": 55,
         "y": 80,
         "z": 0
-      },
-      "params": {
-        "speed" : 0
       }
-    },{
+    },
+    {
       "id": "id04",
-      "nome": "Tractor2",
-      "class": "ATractorPawn",
+      "type": "GroundSensor",
       "location": {
         "x": 500,
         "y": 400,
         "z": 0
-      },
-      "params": {
-        "speed": 0
       }
-    },{
+    },
+    {
       "id": "id05",
-      "nome": "SoilSensor",
-      "class": "ASoilSensorPawn",
+      "type": "Tractor",
       "location": {
-        "x": 500,
-        "y": 400,
+        "x": 205,
+        "y": 80,
         "z": 0
       },
       "params": {
-        "speed": 0
+        "speed": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "id": "id06",
+      "type": "WeatherStation",
+      "location": {
+        "x": 55,
+        "y": 80,
+        "z": 0
       }
     }
   ]

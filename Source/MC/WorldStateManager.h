@@ -30,7 +30,8 @@ private:
     UPROPERTY()
     UMyEnvironmentState* Environment;
 
-    TMap<FString, TSubclassOf<AActor>> ClassRegistry;
+    UPROPERTY()
+    TMap<FString, TSubclassOf<AActor>> EntityClassRegistry;
 
     void RegisterClasses();
 };
