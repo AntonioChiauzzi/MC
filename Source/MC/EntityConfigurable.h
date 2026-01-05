@@ -14,4 +14,6 @@ class IEntityConfigurable
 
 public:
     virtual void ConfigureFromJson(const TSharedPtr<FJsonObject>& Json) = 0;
+
+    virtual void SaveToJson(const TSharedPtr<FJsonObject>& Json) = 0;
 };

@@ -25,3 +25,22 @@ void ATractorPawn::ConfigureFromJson(const TSharedPtr<FJsonObject>& Json)
         Speed->GetNumberField(TEXT("z"))
     );
 }
+
+void ATractorPawn::SaveToJson(const TSharedPtr<FJsonObject>& Json)
+{
+    
+    TSharedPtr<FJsonObject> SpeedObj = MakeShared<FJsonObject>();
+    
+    
+    SpeedObj->SetNumberField(TEXT("x"), Velocity.X);
+    SpeedObj->SetNumberField(TEXT("y"), Velocity.Y);
+    SpeedObj->SetNumberField(TEXT("z"), Velocity.Z);
+
+    
+    Json->SetObjectField(TEXT("speed"), SpeedObj);
+}
+
+FString ATractorPawn::GetEntityType() const 
+{ 
+    return TEXT("Tractor"); 
+}

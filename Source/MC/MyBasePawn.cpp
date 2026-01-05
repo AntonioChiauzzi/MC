@@ -16,3 +16,8 @@ void AMyBasePawn::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 }
+
+FString AMyBasePawn::GetEntityId()
+{
+    return PawnID;
+}

@@ -38,3 +38,8 @@ void AGroundSensorActor::ReadSoilData() const
     }
 }
 
+FString AGroundSensorActor::GetEntityType() const 
+{ 
+    return TEXT("GroundSensor"); 
+}
+

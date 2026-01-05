@@ -20,9 +20,12 @@ public:
     UPROPERTY(VisibleAnywhere, Category="Base Pawn")
     FVector SpawnLocation;
 
+    FString GetEntityId();
+
+    virtual void Tick(float DeltaTime) override;
+
+    virtual FString GetEntityType() const { return TEXT("BaseEntity"); }
+
 protected:
     virtual void BeginPlay() override;
-
-public:
-    virtual void Tick(float DeltaTime) override;
 };

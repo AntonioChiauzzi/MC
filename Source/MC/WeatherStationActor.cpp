@@ -22,3 +22,9 @@ void AWeatherStationActor::ReadEnvironment(const UMyEnvironmentState* Environmen
     UE_LOG(LogTemp, Log, TEXT("Wind Speed: %f"), Environment->WindSpeed);
 }
 
+
+FString AWeatherStationActor::GetEntityType() const 
+{ 
+    return TEXT("WeatherStation"); 
+}
+

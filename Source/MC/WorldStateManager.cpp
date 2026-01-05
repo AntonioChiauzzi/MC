@@ -4,12 +4,13 @@
 #include "JsonUtilities.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
-
+#include "EngineUtils.h"
 #include "TractorPawn.h"
 #include "DronePawn.h"
 #include "GroundSensorActor.h"
 #include "WeatherStationActor.h"
 #include "EntityConfigurable.h"
+#include "MyBaseActor.h"
 
 
 void UWorldStateManager::Initialize(UWorld* InWorld)
@@ -156,8 +157,8 @@ void UWorldStateManager::LoadEntities()
         AActor* A = GetWorld()->SpawnActor<AActor>(
             EntityClassRegistry[Type], Loc, FRotator::ZeroRotator);
 
-        if (AMyBasePawn* BP = Cast<AMyBasePawn>(A))
-            BP->PawnID = Obj->GetStringField(TEXT("id"));
+        if (AMyBaseActor* MyBaseActor = Cast<AMyBaseActor>(A))
+            MyBaseActor->ID = Obj->GetStringField(TEXT("id"));
 
         if (A->GetClass()->ImplementsInterface(UEntityConfigurable::StaticClass()))
             if (IEntityConfigurable* Configurable = Cast<IEntityConfigurable>(A))
@@ -171,30 +172,23 @@ void UWorldStateManager::LoadEntities()
 
 void UWorldStateManager::SaveEntities()
 {
-    /*TSharedPtr<FJsonObject> Root = MakeShared<FJsonObject>();
+    TSharedPtr<FJsonObject> RootObject = MakeShared<FJsonObject>();
     TArray<TSharedPtr<FJsonValue>> EntitiesArray;
 
-    for (AActor* Actor : SpawnedEntities)
+    UWorld* CurrentWorld = GetWorld();
+    if (!CurrentWorld) return;
+
+    for (TActorIterator<AActor> It(CurrentWorld); It; ++It)
     {
-        if (!Actor)
-            continue;
-
-        TSharedPtr<FJsonObject> Obj = MakeShared<FJsonObject>();
-
+        AActor* Actor = *It;
         
-        if (ABasePawn* Pawn = Cast<ABasePawn>(Actor))
-        {
-            Obj->SetStringField(
-                "id",
-                Pawn->GetEntityId()
-            );
-        }
+        AMyBaseActor* MyBaseActor = Cast<AMyBaseActor>(Actor);
+        if (!MyBaseActor) continue; 
 
-        
-        Obj->SetStringField(
-            "class",
-            Actor->GetClass()->GetName()
-        );
+        TSharedPtr<FJsonObject> EntityObj = MakeShared<FJsonObject>();
+
+        EntityObj->SetStringField("id", MyBaseActor->ID);
+        EntityObj->SetStringField("type", MyBaseActor->GetEntityType());
 
         
         FVector L = Actor->GetActorLocation();
@@ -202,28 +196,36 @@ void UWorldStateManager::SaveEntities()
         Loc->SetNumberField("x", L.X);
         Loc->SetNumberField("y", L.Y);
         Loc->SetNumberField("z", L.Z);
-        Obj->SetObjectField("location", Loc);
+        EntityObj->SetObjectField("location", Loc);
 
-        EntitiesArray.Add(
-            MakeShared<FJsonValueObject>(Obj)
-        );
+        
+        if (Actor->Implements<UEntityConfigurable>())
+        {
+            IEntityConfigurable* Interface = Cast<IEntityConfigurable>(Actor);
+            if (Interface)
+            {
+                TSharedPtr<FJsonObject> Params = MakeShared<FJsonObject>();
+                
+                Interface->SaveToJson(Params); 
+
+                if (Params->Values.Num() > 0)
+                {
+                    EntityObj->SetObjectField("params", Params);
+                }
+            }
+        }
+
+        EntitiesArray.Add(MakeShared<FJsonValueObject>(EntityObj));
     }
 
-    Root->SetArrayField("entities", EntitiesArray);
+    RootObject->SetArrayField("entities", EntitiesArray);
 
+    
     FString Output;
-    TSharedRef<TJsonWriter<>> Writer =
-        TJsonWriterFactory<>::Create(&Output);
-
-    FJsonSerializer::Serialize(
-        Root.ToSharedRef(),
-        Writer
-    );
-
-    FFileHelper::SaveStringToFile(
-        Output,
-        *(FPaths::ProjectContentDir() + "Data/entities.json")
-    );*/
+    TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&Output);
+    if (FJsonSerializer::Serialize(RootObject.ToSharedRef(), Writer))
+    {
+        FString FilePath = FPaths::ProjectContentDir() + TEXT("Data/entities.json");
+        FFileHelper::SaveStringToFile(Output, *FilePath);
+    }
 }
-
-
