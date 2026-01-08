@@ -1,79 +1,91 @@
 {
-  "entities": [
-    {
-      "id": "id01",
-      "type": "Drone",
-      "location": {
-        "x": 0,
-        "y": 0,
-        "z": 100
-      },
-      "params": {
-        "speed": {
-          "x": 30,
-          "y": 10,
-          "z": 1
-        }
-      }
-    },
-    {
-      "id": "id02",
-      "type": "Tractor",
-      "location": {
-        "x": 25,
-        "y": 30,
-        "z": 0
-      },
-      "params": {
-        "speed": {
-          "x": 10,
-          "y": 5,
-          "z": 0
-        }
-      }
-    },
-    {
-      "id": "id03",
-      "type": "WeatherStation",
-      "location": {
-        "x": 55,
-        "y": 80,
-        "z": 0
-      }
-    },
-    {
-      "id": "id04",
-      "type": "GroundSensor",
-      "location": {
-        "x": 500,
-        "y": 400,
-        "z": 0
-      }
-    },
-    {
-      "id": "id05",
-      "type": "Tractor",
-      "location": {
-        "x": 205,
-        "y": 80,
-        "z": 0
-      },
-      "params": {
-        "speed": {
-          "x": 0,
-          "y": 0,
-          "z": 0
-        }
-      }
-    },
-    {
-      "id": "id06",
-      "type": "WeatherStation",
-      "location": {
-        "x": 55,
-        "y": 80,
-        "z": 0
-      }
-    }
-  ]
+	"entities": [
+		{
+			"id": "id01",
+			"type": "Drone",
+			"location":
+			{
+				"x": 0,
+				"y": 0,
+				"z": 0
+			},
+			"params":
+			{
+				"speed":
+				{
+					"x": 30,
+					"y": 10,
+					"z": 1
+				}
+			}
+		},
+		{
+			"id": "id02",
+			"type": "Tractor",
+			"location":
+			{
+				"x": 0,
+				"y": 0,
+				"z": 0
+			},
+			"params":
+			{
+				"speed":
+				{
+					"x": 10,
+					"y": 5,
+					"z": 0
+				}
+			}
+		},
+		{
+			"id": "id03",
+			"type": "WeatherStation",
+			"location":
+			{
+				"x": 0,
+				"y": 0,
+				"z": 0
+			}
+		},
+		{
+			"id": "id04",
+			"type": "GroundSensor",
+			"location":
+			{
+				"x": 0,
+				"y": 0,
+				"z": 0
+			}
+		},
+		{
+			"id": "id05",
+			"type": "Tractor",
+			"location":
+			{
+				"x": 0,
+				"y": 0,
+				"z": 0
+			},
+			"params":
+			{
+				"speed":
+				{
+					"x": 0,
+					"y": 0,
+					"z": 0
+				}
+			}
+		},
+		{
+			"id": "id06",
+			"type": "WeatherStation",
+			"location":
+			{
+				"x": 0,
+				"y": 0,
+				"z": 0
+			}
+		}
+	]
 }

@@ -9,6 +9,7 @@ void ADronePawn::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
     SetActorLocation(GetActorLocation() + Velocity * DeltaTime);
+    ReadValueFromSoil();
 }
 
 void ADronePawn::ConfigureFromJson(const TSharedPtr<FJsonObject> &Json)
@@ -60,4 +61,9 @@ void ADronePawn::SaveToJson(const TSharedPtr<FJsonObject>& Json)
 
     
     Json->SetObjectField(TEXT("speed"), SpeedObj);
+}
+
+void ADronePawn::SetEnvironmentState(UMyEnvironmentState* InEnvironment)
+{
+    Environment = InEnvironment;
 }

@@ -4,6 +4,7 @@
 #include "MyBaseActor.h"
 #include "EntityConfigurable.h"
 #include "DronePawn.generated.h"
+#include "MyEnvironmentState.h"
 
 UCLASS()
 class MC_API ADronePawn : public AMyBaseActor, public IEntityConfigurable
@@ -24,5 +25,14 @@ public:
     virtual FString GetEntityType() const override;
     TSharedPtr<FJsonObject> GetParametersAsJson();
 
+    void SetEnvironmentState(UMyEnvironmentState* InEnvironment);
+
+    void ReadValueFromSoil();
+
 protected:
+
+
+private:
+    UPROPERTY()
+    UMyEnvironmentState* Environment;
 };

@@ -5,7 +5,7 @@
 #include "WorldStateManager.h"
 #include "MyGameMode.generated.h"
 
-UCLASS()
+UCLASS(Blueprintable)
 class MC_API AMyGameMode : public AGameMode
 {
     GENERATED_BODY()
