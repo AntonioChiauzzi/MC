@@ -10,6 +10,7 @@
 #include "GroundSensorActor.h"
 #include "WeatherStationActor.h"
 #include "EntityConfigurable.h"
+#include "Landscape.h"
 #include "MyBaseActor.h"
 
 
@@ -130,6 +131,15 @@ void UWorldStateManager::SaveEnvironment() const
 
 void UWorldStateManager::LoadEntities()
 {
+    for (TActorIterator<ALandscape> It(GetWorld()); It; ++It)
+    {
+        ALandscape* L = *It;
+        FBox Bounds = L->GetComponentsBoundingBox();
+        MinBound = Bounds.Min;
+        MaxBound = Bounds.Max;
+        break; 
+    }
+
     FString Json;
     FFileHelper::LoadFileToString(Json,
         *(FPaths::ProjectContentDir() + "Data/entities.json"));
@@ -154,17 +164,37 @@ void UWorldStateManager::LoadEntities()
             L->GetNumberField(TEXT("z"))
         );
 
+        if (Loc.X < MinBound.X || Loc.X > MaxBound.X || Loc.Y < MinBound.Y || Loc.Y > MaxBound.Y)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Entità fuori Landscape! Salto lo spawn."));
+            continue;
+        }
+
         AActor* A = GetWorld()->SpawnActor<AActor>(
             EntityClassRegistry[Type], Loc, FRotator::ZeroRotator);
 
         if (AMyBaseActor* MyBaseActor = Cast<AMyBaseActor>(A))
+        {
             MyBaseActor->ID = Obj->GetStringField(TEXT("id"));
+            MyBaseActor->MapMin = MinBound;
+            MyBaseActor->MapMax = MaxBound;
+        }
 
         if (A->GetClass()->ImplementsInterface(UEntityConfigurable::StaticClass()))
             if (IEntityConfigurable* Configurable = Cast<IEntityConfigurable>(A))
             {
                 Configurable->ConfigureFromJson(Obj);
             }
+        
+        if (A->GetClass()->ImplementsInterface(UEnvironmentInjectable::StaticClass()))
+        {
+            IEnvironmentInjectable::Execute_SetEnvironment(A, Environment);
+        }
+
+        if (A->GetClass()->ImplementsInterface(UEnvironmentReader::StaticClass()))
+        {
+            IEnvironmentReader::Execute_ReadEnvironment(A, Environment);
+        }
     }
 }
 

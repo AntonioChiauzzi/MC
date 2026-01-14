@@ -33,6 +33,12 @@ private:
     UPROPERTY()
     TMap<FString, TSubclassOf<AActor>> EntityClassRegistry;
 
+    UPROPERTY(VisibleAnywhere, Category = "Map Bounds")
+    FVector MinBound;
+
+    UPROPERTY(VisibleAnywhere, Category = "Map Bounds")
+    FVector MaxBound;
+
     void RegisterClasses();
 };
 

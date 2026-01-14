@@ -8,8 +8,10 @@ ADronePawn::ADronePawn()
 void ADronePawn::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-    SetActorLocation(GetActorLocation() + Velocity * DeltaTime);
-    ReadValueFromSoil();
+    FVector NewLoc =  GetActorLocation() + (Velocity * DeltaTime);
+    NewLoc.X = FMath::Clamp(NewLoc.X, MapMin.X, MapMax.X);
+    NewLoc.Y = FMath::Clamp(NewLoc.Y, MapMin.Y, MapMax.Y);
+    SetActorLocation(NewLoc);
 }
 
 void ADronePawn::ConfigureFromJson(const TSharedPtr<FJsonObject> &Json)
@@ -27,8 +29,6 @@ void ADronePawn::ConfigureFromJson(const TSharedPtr<FJsonObject> &Json)
         Speed->GetNumberField(TEXT("y")),
         Speed->GetNumberField(TEXT("z")));
 }
-
-
 
 TSharedPtr<FJsonObject> ADronePawn::GetParametersAsJson()
 {
@@ -63,7 +63,23 @@ void ADronePawn::SaveToJson(const TSharedPtr<FJsonObject>& Json)
     Json->SetObjectField(TEXT("speed"), SpeedObj);
 }
 
-void ADronePawn::SetEnvironmentState(UMyEnvironmentState* InEnvironment)
+void ADronePawn::SetEnvironment_Implementation(UMyEnvironmentState* InEnvironment)
 {
     Environment = InEnvironment;
+    UE_LOG(LogTemp, Log, TEXT("Drone received environment"));
+}
+
+void ADronePawn::ReadValueFromSoil()
+{
+    if (!IsValid(Environment)) return;
+
+    UE_LOG(LogTemp, Log, TEXT("--- Ground Sensor Readings ---"));
+    UE_LOG(LogTemp, Log, TEXT("Soil Temp: %f"), Environment->SoilTemperature);
+    UE_LOG(LogTemp, Log, TEXT("Soil Humidity: %f"), Environment->SoilHumidity);
+    UE_LOG(LogTemp, Log, TEXT("Soil pH: %f"), Environment->SoilpH);
+
+    for (const auto& KVP : Environment->SoilChemicalComposition)
+    {
+        UE_LOG(LogTemp, Log, TEXT("Chemical %s: %f"), *KVP.Key, KVP.Value);
+    }
 }

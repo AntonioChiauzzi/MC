@@ -14,7 +14,8 @@ public class MC : ModuleRules
 		"InputCore", 
 		"EnhancedInput",
 		"Json",
-		"JsonUtilities" });
+		"JsonUtilities",
+		"Landscape" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 

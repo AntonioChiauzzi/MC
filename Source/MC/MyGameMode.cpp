@@ -15,7 +15,7 @@ void AMyGameMode::BeginPlay()
         SaveTimerHandle,
         this,
         &AMyGameMode::SaveWorld,
-        5.0f,
+        1800.0f,
         true
     );
 }

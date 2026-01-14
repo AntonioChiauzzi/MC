@@ -8,7 +8,10 @@ ATractorPawn::ATractorPawn()
 void ATractorPawn::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-    SetActorLocation(GetActorLocation() + Velocity * DeltaTime);
+    FVector NewLoc = GetActorLocation() + (Velocity * DeltaTime);
+    NewLoc.X = FMath::Clamp(NewLoc.X, MapMin.X, MapMax.X);
+    NewLoc.Y = FMath::Clamp(NewLoc.Y, MapMin.Y, MapMax.Y);
+    SetActorLocation(NewLoc);
 }
 
 void ATractorPawn::ConfigureFromJson(const TSharedPtr<FJsonObject>& Json)

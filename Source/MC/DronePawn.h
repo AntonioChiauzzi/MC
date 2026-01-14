@@ -3,11 +3,12 @@
 #include "CoreMinimal.h"
 #include "MyBaseActor.h"
 #include "EntityConfigurable.h"
-#include "DronePawn.generated.h"
 #include "MyEnvironmentState.h"
+#include "EnvironmentInjectable.h"
+#include "DronePawn.generated.h"
 
 UCLASS()
-class MC_API ADronePawn : public AMyBaseActor, public IEntityConfigurable
+class MC_API ADronePawn : public AMyBaseActor, public IEntityConfigurable, public IEnvironmentInjectable
 {
     GENERATED_BODY()
 
@@ -25,7 +26,7 @@ public:
     virtual FString GetEntityType() const override;
     TSharedPtr<FJsonObject> GetParametersAsJson();
 
-    void SetEnvironmentState(UMyEnvironmentState* InEnvironment);
+    virtual void SetEnvironment_Implementation(UMyEnvironmentState* Environment) override;
 
     void ReadValueFromSoil();
 

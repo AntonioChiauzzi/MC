@@ -19,6 +19,12 @@ public:
     UPROPERTY(VisibleAnywhere, Category="Base Actor")
     FVector SpawnLocation;
 
+    UPROPERTY(VisibleAnywhere, Category = "Base Actor")
+    FVector MapMin;
+
+    UPROPERTY(VisibleAnywhere, Category = "Base Actor")
+    FVector MapMax;
+
     FString GetEntityId();
 
     virtual void Tick(float DeltaTime) override;

@@ -9,32 +9,20 @@ AGroundSensorActor::AGroundSensorActor()
 void AGroundSensorActor::BeginPlay()
 {
     Super::BeginPlay();
-
-    ReadSoilData();
 }
 
-void AGroundSensorActor::SetEnvironmentState(UMyEnvironmentState* InEnvironment)
+void AGroundSensorActor::ReadEnvironment_Implementation(const UMyEnvironmentState* Environment)
 {
-    Environment = InEnvironment;
-}
+    if (!IsValid(Environment)) return;
 
-void AGroundSensorActor::ReadSoilData() const
-{
-    if (!Environment) return;
-
+    UE_LOG(LogTemp, Log, TEXT("--- Ground Sensor Readings ---"));
     UE_LOG(LogTemp, Log, TEXT("Soil Temp: %f"), Environment->SoilTemperature);
     UE_LOG(LogTemp, Log, TEXT("Soil Humidity: %f"), Environment->SoilHumidity);
     UE_LOG(LogTemp, Log, TEXT("Soil pH: %f"), Environment->SoilpH);
 
-    for (const auto& Elem : Environment->SoilChemicalComposition)
+    for (const auto& KVP : Environment->SoilChemicalComposition)
     {
-        UE_LOG(
-            LogTemp,
-            Log,
-            TEXT("Chemical %s: %f"),
-            *Elem.Key,
-            Elem.Value
-        );
+        UE_LOG(LogTemp, Log, TEXT("Chemical %s: %f"), *KVP.Key, KVP.Value);
     }
 }
 
