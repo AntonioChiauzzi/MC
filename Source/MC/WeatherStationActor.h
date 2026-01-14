@@ -23,8 +23,10 @@ public:
     virtual void Tick(float DeltaTime) override;
 protected:
     virtual void BeginPlay() override;
-    UFUNCTION(Blueprintable)
+    UFUNCTION(Blueprintable) 
     void timerAction();
     FTimerHandle TimerHandle_Action;
+    
+    
 
 };
