@@ -19,8 +19,14 @@ public:
 
     virtual FString GetEntityType() const override;
 
+    virtual void Tick(float DeltaTime) override;
 protected:
     virtual void BeginPlay() override;
+    UFUNCTION(Blueprintable) 
+    void timerAction();
+    FTimerHandle TimerHandle_Action;
+    
+    
 
     UPROPERTY(EditAnywhere, Category="Sensor")
     float ReadIntervalSeconds;
