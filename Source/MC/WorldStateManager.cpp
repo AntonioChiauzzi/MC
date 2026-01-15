@@ -25,53 +25,36 @@ void UWorldStateManager::LoadEnvironment()
     FString JsonString;
     const FString FilePath = FPaths::ProjectContentDir() + TEXT("Data/environment.json");
 
-    if (!FFileHelper::LoadFileToString(JsonString, *FilePath))
-    {
-        UE_LOG(LogTemp, Error, TEXT("Cannot load environment.json"));
-        return;
-    }
+    if (!FFileHelper::LoadFileToString(JsonString, *FilePath)) return;
 
     TSharedPtr<FJsonObject> RootJson;
     TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(JsonString);
 
-    if (!FJsonSerializer::Deserialize(Reader, RootJson) || !RootJson.IsValid())
-    {
-        UE_LOG(LogTemp, Error, TEXT("Invalid JSON"));
-        return;
-    }
+    if (!FJsonSerializer::Deserialize(Reader, RootJson) || !RootJson.IsValid()) return;
 
-    const TSharedPtr<FJsonObject>* EnvJson;
-
-    if (!RootJson->TryGetObjectField(TEXT("environment"), EnvJson))
-    {
-        UE_LOG(LogTemp, Error, TEXT("Missing environment object"));
-        return;
-    }
+    TSharedPtr<FJsonObject> EnvJson = RootJson->GetObjectField(TEXT("environment"));
+    if (!EnvJson.IsValid()) return;
 
     if (!Environment)
     {
         Environment = NewObject<UMyEnvironmentState>(this);
     }
 
-    Environment->SoilTemperature = (*EnvJson)->GetNumberField(TEXT("soilTemperature"));
-    Environment->SoilHumidity = (*EnvJson)->GetNumberField(TEXT("soilHumidity"));
-    Environment->SoilSolarIrradiance = (*EnvJson)->GetNumberField(TEXT("soilSolarIrradiance"));
-    Environment->SoilpH = (*EnvJson)->GetNumberField(TEXT("soilpH"));
-    Environment->WindSpeed = (*EnvJson)->GetNumberField(TEXT("windSpeed"));
-    Environment->AirTemperature = (*EnvJson)->GetNumberField(TEXT("airTemperature"));
-    Environment->AirHumidity = (*EnvJson)->GetNumberField(TEXT("airHumidity"));
+    EnvJson->TryGetNumberField(TEXT("soilTemperature"), Environment->SoilTemperature);
+    EnvJson->TryGetNumberField(TEXT("soilHumidity"), Environment->SoilHumidity);
+    EnvJson->TryGetNumberField(TEXT("soilSolarIrradiance"), Environment->SoilSolarIrradiance);
+    EnvJson->TryGetNumberField(TEXT("soilpH"), Environment->SoilpH);
+    EnvJson->TryGetNumberField(TEXT("windSpeed"), Environment->WindSpeed);
+    EnvJson->TryGetNumberField(TEXT("airTemperature"), Environment->AirTemperature);
+    EnvJson->TryGetNumberField(TEXT("airHumidity"), Environment->AirHumidity);
 
     Environment->SoilChemicalComposition.Empty();
-
     const TSharedPtr<FJsonObject>* ChemJson;
-    if ((*EnvJson)->TryGetObjectField(TEXT("soilChemicalComposition"), ChemJson))
+    if (EnvJson->TryGetObjectField(TEXT("soilChemicalComposition"), ChemJson))
     {
         for (const auto& Elem : (*ChemJson)->Values)
         {
-            Environment->SoilChemicalComposition.Add(
-                Elem.Key,
-                Elem.Value->AsNumber()
-            );
+            Environment->SoilChemicalComposition.Add(Elem.Key, Elem.Value->AsNumber());
         }
     }
 
