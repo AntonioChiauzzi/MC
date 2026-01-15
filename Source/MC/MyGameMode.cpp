@@ -7,13 +7,13 @@ void AMyGameMode::BeginPlay()
 
     WorldManager = NewObject<UWorldStateManager>(this);
 
-    WorldManager->EntityRegistryAsset = RegistryConfig;
-
-    WorldManager->Initialize(GetWorld());
-
-    WorldManager->LoadEnvironment();
-    WorldManager->LoadEntities();
-
+    if (WorldManager)
+    {
+        WorldManager->EntityRegistryAsset = RegistryConfig;
+        WorldManager->Initialize(GetWorld());
+        WorldManager->LoadEnvironment();
+        WorldManager->LoadEntities();
+    }
     GetWorldTimerManager().SetTimer(
         SaveTimerHandle,
         this,
