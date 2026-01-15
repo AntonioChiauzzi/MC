@@ -13,6 +13,9 @@ class MC_API AMyGameMode : public AGameMode
 public:
     virtual void BeginPlay() override;
 
+    UPROPERTY(EditAnywhere)
+    UEntityRegistryDataAsset* RegistryConfig;
+
 private:
     UPROPERTY()
     UWorldStateManager* WorldManager;

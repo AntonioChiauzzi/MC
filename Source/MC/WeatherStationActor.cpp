@@ -2,21 +2,21 @@
 #include "MyEnvironmentState.h"
 
 
-void AWeatherStationActor::Tick(float DeltaTime)
+AWeatherStationActor::AWeatherStationActor()
 {
-    Super::Tick(DeltaTime);
-    
+
 }
+
 void AWeatherStationActor::BeginPlay()
 {
-    Super::BeginPlay();
-   GetWorldTimerManager().SetTimer(
-   TimerHandle_Action,
-this,
-&AWeatherStationActor::timerAction,
-120.f,
-true
-);
+	Super::BeginPlay();
+	GetWorldTimerManager().SetTimer(
+		TimerHandle_Action,
+		this,
+		&AWeatherStationActor::timerAction,
+		120.f,
+		true
+	);
 }
 
 

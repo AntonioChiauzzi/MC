@@ -3,7 +3,10 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "MyEnvironmentState.h"
+#include "EntityRegistryDataAsset.h"
 #include "WorldStateManager.generated.h"
+
+class UEntityRegistryDataAsset;
 
 UCLASS()
 class MC_API UWorldStateManager : public UObject
@@ -21,6 +24,9 @@ public:
     void LoadEntities();
     void SaveEntities();
 
+    UPROPERTY(EditAnywhere, Category = "Registry")
+    UEntityRegistryDataAsset* EntityRegistryAsset;
+
 private:
     UWorld* World;
 
@@ -30,8 +36,6 @@ private:
     UPROPERTY()
     UMyEnvironmentState* Environment;
 
-    UPROPERTY()
-    TMap<FString, TSubclassOf<AActor>> EntityClassRegistry;
 
     UPROPERTY(VisibleAnywhere, Category = "Map Bounds")
     FVector MinBound;
@@ -39,6 +43,5 @@ private:
     UPROPERTY(VisibleAnywhere, Category = "Map Bounds")
     FVector MaxBound;
 
-    void RegisterClasses();
 };
 

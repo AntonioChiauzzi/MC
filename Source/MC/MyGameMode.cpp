@@ -6,6 +6,9 @@ void AMyGameMode::BeginPlay()
     Super::BeginPlay();
 
     WorldManager = NewObject<UWorldStateManager>(this);
+
+    WorldManager->EntityRegistryAsset = RegistryConfig;
+
     WorldManager->Initialize(GetWorld());
 
     WorldManager->LoadEnvironment();
