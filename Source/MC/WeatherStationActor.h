@@ -26,7 +26,19 @@ protected:
     UFUNCTION(Blueprintable) 
     void timerAction();
     FTimerHandle TimerHandle_Action;
+    UPROPERTY(VisibleAnywhere, Category="Weather Readings")
+    float CurrentAirTemperature;
+
+    UPROPERTY(VisibleAnywhere, Category="Weather Readings")
+    float CurrentAirHumidity;
+
+    UPROPERTY(VisibleAnywhere, Category="Weather Readings")
+    float CurrentWindSpeed;
     
     UPROPERTY(EditAnywhere, Category = "Sensor")
     float ReadIntervalSeconds;
+    
+    UPROPERTY(EditAnywhere, Category="Environment")
+    UMyEnvironmentState* EnvironmentState;
+    
 };

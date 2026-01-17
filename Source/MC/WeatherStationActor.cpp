@@ -26,6 +26,9 @@ void AWeatherStationActor::ReadEnvironment_Implementation(const UMyEnvironmentSt
 	{
 		return;
 	}
+	CurrentAirTemperature = Environment->AirTemperature;
+	CurrentAirHumidity    = Environment->AirHumidity;
+	CurrentWindSpeed      = Environment->WindSpeed;
 	UE_LOG(LogTemp, Log, TEXT("--- Weather Station Readings ---"));
 	UE_LOG(LogTemp, Log, TEXT("Air Temperature: %f"), Environment->AirTemperature);
 	UE_LOG(LogTemp, Log, TEXT("Air Humidity: %f"), Environment->AirHumidity);
@@ -41,6 +44,9 @@ FString AWeatherStationActor::GetEntityType() const
 
 void AWeatherStationActor::timerAction()
 {
-    UE_LOG(LogTemp, Warning, TEXT("⏱ Timer scattato! Tempo: %f"), GetWorld()->GetTimeSeconds());
+	if (EnvironmentState)
+	{
+		ReadEnvironment(EnvironmentState);
+	}
 }
 
