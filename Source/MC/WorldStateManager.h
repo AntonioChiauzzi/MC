@@ -15,6 +15,9 @@ class MC_API UWorldStateManager : public UObject
     GENERATED_BODY()
 
 public:
+
+    UWorldStateManager();
+
     void Initialize(UWorld* InWorld);
 
     void LoadEnvironment();

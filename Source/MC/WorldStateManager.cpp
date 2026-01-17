@@ -12,6 +12,8 @@
 #include "EntityConfigurable.h"
 #include "Landscape.h"
 #include "MyBaseActor.h"
+#include "UObject/ConstructorHelpers.h"
+
 
 
 void UWorldStateManager::Initialize(UWorld* InWorld)
@@ -24,6 +26,21 @@ void UWorldStateManager::Initialize(UWorld* InWorld)
         {
             ResourceManager->EnvState = Environment;
         }
+    }
+}
+
+UWorldStateManager::UWorldStateManager()
+{
+    static ConstructorHelpers::FObjectFinder<UEntityRegistryDataAsset> RegistryObj(TEXT("/Game/Data/DA_EntityRegistry.DA_EntityRegistry"));
+
+    if (RegistryObj.Succeeded())
+    {
+        EntityRegistryAsset = RegistryObj.Object;
+        UE_LOG(LogTemp, Log, TEXT("WorldStateManager: Data Asset caricato con successo!"));
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("WorldStateManager: IMPOSSIBILE caricare il Data Asset al percorso /Game/Data/DA_EntityRegistry"));
     }
 }
 
