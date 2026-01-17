@@ -8,41 +8,38 @@ ADronePawn::ADronePawn()
 void ADronePawn::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-    FVector NewLoc =  GetActorLocation() + (Velocity * DeltaTime);
-    NewLoc.X = FMath::Clamp(NewLoc.X, MapMin.X, MapMax.X);
-    NewLoc.Y = FMath::Clamp(NewLoc.Y, MapMin.Y, MapMax.Y);
-    SetActorLocation(NewLoc);
+    if (BatteryLevel > 0.0f)
+    {
+        BatteryLevel = FMath::Max(0.0f, BatteryLevel - (BatteryConsumptionRate * DeltaTime));
+        if (BatteryLevel <= 0.0f)
+        {
+            Velocity = FVector::ZeroVector;
+            return;
+        }
+        FVector NewLoc = GetActorLocation() + (Velocity * DeltaTime);
+        NewLoc.X = FMath::Clamp(NewLoc.X, MapMin.X, MapMax.X);
+        NewLoc.Y = FMath::Clamp(NewLoc.Y, MapMin.Y, MapMax.Y);
+        NewLoc.Z = GetActorLocation().Z + (Velocity.Z * DeltaTime);
+        NewLoc.Z = FMath::Clamp(NewLoc.Z, 0.0f, 2000.0f);
+        SetActorLocation(NewLoc);
+    }
 }
 
-void ADronePawn::ConfigureFromJson(const TSharedPtr<FJsonObject> &Json)
+void ADronePawn::ConfigureFromJson(const TSharedPtr<FJsonObject>& Json)
 {
-    if (!Json->HasField(TEXT("params")))
-        return;
-    auto Params = Json->GetObjectField(TEXT("params"));
+    const TSharedPtr<FJsonObject>* Params;
+    if (!Json->TryGetObjectField(TEXT("params"), Params)) return;
 
-    if (!Params->HasField(TEXT("speed")))
-        return;
-    auto Speed = Params->GetObjectField(TEXT("speed"));
+    const TSharedPtr<FJsonObject>* SpeedObj;
+    if ((*Params)->TryGetObjectField(TEXT("speed"), SpeedObj))
+    {
+        Velocity.X = (*SpeedObj)->GetNumberField(TEXT("x"));
+        Velocity.Y = (*SpeedObj)->GetNumberField(TEXT("y"));
+        Velocity.Z = (*SpeedObj)->GetNumberField(TEXT("z"));
+    }
 
-    Velocity = FVector(
-        Speed->GetNumberField(TEXT("x")),
-        Speed->GetNumberField(TEXT("y")),
-        Speed->GetNumberField(TEXT("z")));
+    (*Params)->TryGetNumberField(TEXT("battery"), BatteryLevel);
 }
-
-TSharedPtr<FJsonObject> ADronePawn::GetParametersAsJson()
-{
-    TSharedPtr<FJsonObject> ParamsJson = MakeShared<FJsonObject>();
-    TSharedPtr<FJsonObject> SpeedJson = MakeShared<FJsonObject>();
-
-    SpeedJson->SetNumberField(TEXT("x"), Velocity.X);
-    SpeedJson->SetNumberField(TEXT("y"), Velocity.Y);
-    SpeedJson->SetNumberField(TEXT("z"), Velocity.Z);
-
-    ParamsJson->SetObjectField(TEXT("speed"), SpeedJson);
-    return ParamsJson;
-}
-
 
 FString ADronePawn::GetEntityType() const 
 { 
@@ -51,16 +48,13 @@ FString ADronePawn::GetEntityType() const
 
 void ADronePawn::SaveToJson(const TSharedPtr<FJsonObject>& Json)
 {
-    
     TSharedPtr<FJsonObject> SpeedObj = MakeShared<FJsonObject>();
-    
-    
     SpeedObj->SetNumberField(TEXT("x"), Velocity.X);
     SpeedObj->SetNumberField(TEXT("y"), Velocity.Y);
     SpeedObj->SetNumberField(TEXT("z"), Velocity.Z);
 
-    
     Json->SetObjectField(TEXT("speed"), SpeedObj);
+    Json->SetNumberField(TEXT("battery"), BatteryLevel);
 }
 
 void ADronePawn::SetEnvironment_Implementation(UMyEnvironmentState* InEnvironment)

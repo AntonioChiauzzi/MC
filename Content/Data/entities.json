@@ -3,46 +3,41 @@
 		{
 			"id": "id01",
 			"type": "Drone",
-			"location":
-			{
+			"location": {
 				"x": 0,
 				"y": 0,
 				"z": 0
 			},
-			"params":
-			{
-				"speed":
-				{
+			"params": {
+				"speed": {
 					"x": 30,
 					"y": 10,
 					"z": 1
-				}
+				},
+				"battery": 30
 			}
 		},
 		{
 			"id": "id02",
 			"type": "Tractor",
-			"location":
-			{
+			"location": {
 				"x": 0,
 				"y": 0,
 				"z": 0
 			},
-			"params":
-			{
-				"speed":
-				{
+			"params": {
+				"speed": {
 					"x": 10,
 					"y": 5,
 					"z": 0
-				}
+				},
+				"battery": 100
 			}
 		},
 		{
 			"id": "id03",
 			"type": "WeatherStation",
-			"location":
-			{
+			"location": {
 				"x": 0,
 				"y": 0,
 				"z": 0
@@ -51,40 +46,54 @@
 		{
 			"id": "id04",
 			"type": "GroundSensor",
-			"location":
-			{
-				"x": 0,
-				"y": 0,
+			"location": {
+				"x": 50,
+				"y": 50,
 				"z": 0
 			}
 		},
 		{
 			"id": "id05",
 			"type": "Tractor",
-			"location":
-			{
-				"x": 0,
-				"y": 0,
+			"location": {
+				"x": 15,
+				"y": 36,
 				"z": 0
 			},
-			"params":
-			{
-				"speed":
-				{
+			"params": {
+				"speed": {
 					"x": 0,
 					"y": 0,
 					"z": 0
-				}
+				},
+				"battery": 85
 			}
 		},
 		{
 			"id": "id06",
 			"type": "WeatherStation",
-			"location":
-			{
+			"location": {
 				"x": 0,
 				"y": 0,
 				"z": 0
+			}
+		},
+		{
+			"id": "id07",
+			"type": "Harvester",
+			"location": {
+				"x": 100,
+				"y": 50,
+				"z": 0
+			},
+			"params": {
+				"speed": {
+					"x": 0,
+					"y": 0,
+					"z": 0
+				},
+				"battery": 72,
+				"harvestCapacity": 0
 			}
 		}
 	]

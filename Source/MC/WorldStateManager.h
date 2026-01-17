@@ -4,6 +4,7 @@
 #include "UObject/NoExportTypes.h"
 #include "MyEnvironmentState.h"
 #include "EntityRegistryDataAsset.h"
+#include "ResourceManager.h"
 #include "WorldStateManager.generated.h"
 
 class UEntityRegistryDataAsset;
@@ -36,6 +37,8 @@ private:
     UPROPERTY()
     UMyEnvironmentState* Environment;
 
+    UPROPERTY()
+    class UResourceManager* ResourceManager;
 
     UPROPERTY(VisibleAnywhere, Category = "Map Bounds")
     FVector MinBound;

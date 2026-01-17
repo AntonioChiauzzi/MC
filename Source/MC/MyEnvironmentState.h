@@ -25,6 +25,9 @@ class MC_API UMyEnvironmentState : public UObject
 		float SoilpH;
 
 		UPROPERTY()
+		float cropMaturity;
+
+		UPROPERTY()
 		float WindSpeed;
 
 		UPROPERTY()

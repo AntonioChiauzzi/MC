@@ -5,6 +5,7 @@
     "soilHumidity": 70,
     "soilSolarIrradiance": 400,
     "soilpH": 7,
+    "cropMaturity": 20,
     "windSpeed": 30,
     "airTemperature": 20,
     "airHumidity": 70,

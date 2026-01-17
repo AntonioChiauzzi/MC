@@ -18,13 +18,18 @@ public:
     UPROPERTY()
     FVector Velocity;
 
+    UPROPERTY(BlueprintReadWrite)
+    float BatteryLevel = 100.0f;
+
+    UPROPERTY(EditAnywhere)
+    float BatteryConsumptionRate = 1.0f;
+
     virtual void Tick(float DeltaTime) override;
     virtual void ConfigureFromJson(const TSharedPtr<FJsonObject>& Json) override;
 
     virtual void SaveToJson(const TSharedPtr<FJsonObject>& Json) override;
 
     virtual FString GetEntityType() const override;
-    TSharedPtr<FJsonObject> GetParametersAsJson();
 
     virtual void SetEnvironment_Implementation(UMyEnvironmentState* Environment) override;
 

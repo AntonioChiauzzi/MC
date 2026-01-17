@@ -14,7 +14,6 @@ void AMyBaseActor::BeginPlay()
 	
 }
 
-// Called every frame
 void AMyBaseActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);

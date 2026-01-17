@@ -17,6 +17,14 @@
 void UWorldStateManager::Initialize(UWorld* InWorld)
 {
     World = InWorld;
+    if (!ResourceManager)
+    {
+        ResourceManager = NewObject<UResourceManager>(this);
+        if (Environment)
+        {
+            ResourceManager->EnvState = Environment;
+        }
+    }
 }
 
 
@@ -44,6 +52,7 @@ void UWorldStateManager::LoadEnvironment()
     EnvJson->TryGetNumberField(TEXT("soilHumidity"), Environment->SoilHumidity);
     EnvJson->TryGetNumberField(TEXT("soilSolarIrradiance"), Environment->SoilSolarIrradiance);
     EnvJson->TryGetNumberField(TEXT("soilpH"), Environment->SoilpH);
+    EnvJson->TryGetNumberField(TEXT("cropMaturity"), Environment->cropMaturity);
     EnvJson->TryGetNumberField(TEXT("windSpeed"), Environment->WindSpeed);
     EnvJson->TryGetNumberField(TEXT("airTemperature"), Environment->AirTemperature);
     EnvJson->TryGetNumberField(TEXT("airHumidity"), Environment->AirHumidity);
@@ -68,15 +77,16 @@ void UWorldStateManager::SaveEnvironment() const
 
     TSharedPtr<FJsonObject> EnvJson = MakeShared<FJsonObject>();
 
-    EnvJson->SetNumberField("air_temperature", Environment->AirTemperature);
-    EnvJson->SetNumberField("air_humidity", Environment->AirHumidity);
-    EnvJson->SetNumberField("wind_speed", Environment->WindSpeed);
+    EnvJson->SetNumberField("airTemperature", Environment->AirTemperature);
+    EnvJson->SetNumberField("airHumidity", Environment->AirHumidity);
+    EnvJson->SetNumberField("windSpeed", Environment->WindSpeed);
 
-    EnvJson->SetNumberField("soil_temperature", Environment->SoilTemperature);
-    EnvJson->SetNumberField("soil_humidity", Environment->SoilHumidity);
-    EnvJson->SetNumberField("soil_solar_irradiance",
+    EnvJson->SetNumberField("soilTemperature", Environment->SoilTemperature);
+    EnvJson->SetNumberField("soilHumidity", Environment->SoilHumidity);
+    EnvJson->SetNumberField("soilSolarIrradiance",
                             Environment->SoilSolarIrradiance);
-    EnvJson->SetNumberField("soil_ph", Environment->SoilpH);
+    EnvJson->SetNumberField("soilpH", Environment->SoilpH);
+    EnvJson->SetNumberField("cropMaturity", Environment->cropMaturity);
 
     TSharedPtr<FJsonObject> ChemJson = MakeShared<FJsonObject>();
     for (const auto& Elem : Environment->SoilChemicalComposition)
@@ -180,6 +190,11 @@ void UWorldStateManager::LoadEntities()
         }
 
         SpawnedEntities.Add(A);
+
+        if (ResourceManager)
+        {
+            ResourceManager->ManagedEntities.Add(A);
+        }
     }
 }
 
@@ -217,7 +232,7 @@ void UWorldStateManager::SaveEntities()
             if (MyBaseActor->GetClass()->ImplementsInterface(UEntityConfigurable::StaticClass()))
                 if (IEntityConfigurable* Configurable = Cast<IEntityConfigurable>(MyBaseActor))
                 {
-                    Configurable->ConfigureFromJson(Params);
+                    Configurable->SaveToJson(Params);
                 }
 
             if (Params->Values.Num() > 0)
