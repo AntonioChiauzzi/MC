@@ -5,15 +5,20 @@
 #include "WorldStateManager.h"
 #include "MyGameMode.generated.h"
 
+class UEntityRegistryDataAsset;
+
 UCLASS(Blueprintable)
 class MC_API AMyGameMode : public AGameMode
 {
     GENERATED_BODY()
 
 public:
+
+    AMyGameMode();
+
     virtual void BeginPlay() override;
 
-    UPROPERTY(EditAnywhere)
+    UPROPERTY()
     UEntityRegistryDataAsset* RegistryConfig;
 
 private:

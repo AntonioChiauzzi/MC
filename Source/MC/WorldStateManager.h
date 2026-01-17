@@ -16,8 +16,6 @@ class MC_API UWorldStateManager : public UObject
 
 public:
 
-    UWorldStateManager();
-
     void Initialize(UWorld* InWorld);
 
     void LoadEnvironment();

@@ -1,5 +1,17 @@
 #include "MyGameMode.h"
 #include "WorldStateManager.h"
+#include "EntityRegistryDataAsset.h"
+#include "UObject/ConstructorHelpers.h"
+
+AMyGameMode::AMyGameMode()
+{
+    static ConstructorHelpers::FObjectFinder<UEntityRegistryDataAsset> RegistryAssetObj(TEXT("/Game/Data/DA_EntityRegistry.DA_EntityRegistry"));
+
+    if (RegistryAssetObj.Succeeded())
+    {
+        RegistryConfig = RegistryAssetObj.Object;
+    }
+}
 
 void AMyGameMode::BeginPlay()
 {
