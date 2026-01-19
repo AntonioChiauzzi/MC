@@ -47,8 +47,8 @@
 			"id": "id04",
 			"type": "GroundSensor",
 			"location": {
-				"x": 50,
-				"y": 50,
+				"x": 0,
+				"y": 0,
 				"z": 0
 			}
 		},
@@ -73,8 +73,8 @@
 			"id": "id06",
 			"type": "WeatherStation",
 			"location": {
-				"x": 0,
-				"y": 0,
+				"x": 50,
+				"y": 50,
 				"z": 0
 			}
 		},
