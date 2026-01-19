@@ -3,7 +3,8 @@
 AMyBaseActor::AMyBaseActor()
 {
  	PrimaryActorTick.bCanEverTick = true;
-
+    BaseMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BaseMesh"));
+    RootComponent = BaseMesh;
 }
 
 void AMyBaseActor::BeginPlay()
