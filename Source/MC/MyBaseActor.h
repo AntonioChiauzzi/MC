@@ -15,6 +15,8 @@ public:
 	UPROPERTY(VisibleAnywhere, Category="Base Actor")
     FString ID;
 
+    UPROPERTY(VisibleAnywhere, Category = "Base Actor")
+    FString Name;
     
     UPROPERTY(VisibleAnywhere, Category="Base Actor")
     FVector SpawnLocation;
@@ -26,6 +28,8 @@ public:
     FVector MapMax;
 
     FString GetEntityId();
+
+    FString GetEntityName();
 
     virtual void Tick(float DeltaTime) override;
 

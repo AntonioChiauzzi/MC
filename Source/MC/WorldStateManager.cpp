@@ -11,6 +11,7 @@
 #include "WeatherStationActor.h"
 #include "EntityConfigurable.h"
 #include "Landscape.h"
+#include "LandscapeProxy.h"
 #include "MyBaseActor.h"
 
 
@@ -117,14 +118,32 @@ void UWorldStateManager::SaveEnvironment() const
 
 void UWorldStateManager::LoadEntities()
 {
-    for (TActorIterator<ALandscape> It(World); It; ++It)
+    FBox TotalBounds(ForceInit);
+    for (TActorIterator<ALandscapeProxy> It(World); It; ++It)
     {
-        ALandscape* L = *It;
-        FBox Bounds = L->GetComponentsBoundingBox();
-        MinBound = Bounds.Min;
-        MaxBound = Bounds.Max;
-        break;
+        ALandscapeProxy* LP = *It;
+        if (LP)
+        {
+            TotalBounds += LP->GetComponentsBoundingBox();
+        }
     }
+    if (TotalBounds.IsValid)
+    {
+        MinBound = TotalBounds.Min;
+        MaxBound = TotalBounds.Max;
+    }
+    else
+    {
+        for (TActorIterator<ALandscape> It(World); It; ++It)
+        {
+            FVector Origin, Extent;
+            It->GetActorBounds(false, Origin, Extent);
+            MinBound = Origin - Extent;
+            MaxBound = Origin + Extent;
+            break;
+        }
+    }
+    UE_LOG(LogTemp, Log, TEXT("Confini Landscape Finali: Min %s - Max %s"), *MinBound.ToString(), *MaxBound.ToString());
 
     FString Json;
     const FString FilePath = FPaths::ProjectContentDir() + TEXT("Data/entities.json");
@@ -160,7 +179,7 @@ void UWorldStateManager::LoadEntities()
 
         if (Loc.X < MinBound.X || Loc.X > MaxBound.X || Loc.Y < MinBound.Y || Loc.Y > MaxBound.Y)
         {
-            UE_LOG(LogTemp, Warning, TEXT("Entità %s fuori Landscape!"), *Type);
+            UE_LOG(LogTemp, Warning, TEXT("Entità %s fuori Landscape! Loc: %s | Limiti: Min(%f, %f) Max(%f, %f)"),*Type, *Loc.ToString(), MinBound.X, MinBound.Y, MaxBound.X, MaxBound.Y);
             continue;
         }
 
@@ -170,8 +189,19 @@ void UWorldStateManager::LoadEntities()
         if (AMyBaseActor* MyBaseActor = Cast<AMyBaseActor>(A))
         {
             MyBaseActor->ID = Obj->GetStringField(TEXT("id"));
+            FString NameField;
+            if (Obj->TryGetStringField(TEXT("name"), NameField)) {
+                MyBaseActor->Name = NameField;
+            }
+            else {
+                MyBaseActor->Name = MyBaseActor->ID;
+            }
             MyBaseActor->MapMin = MinBound;
             MyBaseActor->MapMax = MaxBound;
+
+#if WITH_EDITOR
+            A->SetActorLabel(MyBaseActor->Name);
+#endif
         }
 
         if (A->GetClass()->ImplementsInterface(UEntityConfigurable::StaticClass()))

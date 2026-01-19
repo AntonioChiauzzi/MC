@@ -24,3 +24,8 @@ FString AMyBaseActor::GetEntityId()
 {
     return ID;
 }
+
+FString AMyBaseActor::GetEntityName()
+{
+    return Name;
+}

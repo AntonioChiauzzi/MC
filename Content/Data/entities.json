@@ -2,6 +2,7 @@
 	"entities": [
 		{
 			"id": "id01",
+			"name":"Drone1",
 			"type": "Drone",
 			"location": {
 				"x": 0,
@@ -19,6 +20,7 @@
 		},
 		{
 			"id": "id02",
+			"name":"Trattore1",
 			"type": "Tractor",
 			"location": {
 				"x": 0,
@@ -36,6 +38,7 @@
 		},
 		{
 			"id": "id03",
+			"name":"StazioneMeteo1",
 			"type": "WeatherStation",
 			"location": {
 				"x": 0,
@@ -45,6 +48,7 @@
 		},
 		{
 			"id": "id04",
+			"name":"SensoreTerreno1",
 			"type": "GroundSensor",
 			"location": {
 				"x": 0,
@@ -54,6 +58,7 @@
 		},
 		{
 			"id": "id05",
+			"name":"Trattore2",
 			"type": "Tractor",
 			"location": {
 				"x": 15,
@@ -71,6 +76,7 @@
 		},
 		{
 			"id": "id06",
+			"name":"StazioneMeteo2",
 			"type": "WeatherStation",
 			"location": {
 				"x": 50,
@@ -80,6 +86,7 @@
 		},
 		{
 			"id": "id07",
+			"name":"Raccoglitrice1",
 			"type": "Harvester",
 			"location": {
 				"x": 100,
