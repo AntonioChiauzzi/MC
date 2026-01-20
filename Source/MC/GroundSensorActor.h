@@ -22,6 +22,28 @@ public:
 
 protected:
     virtual void BeginPlay() override;
+    
+    UFUNCTION(Blueprintable) 
+    void timerAction();
+    FTimerHandle TimerHandle_Action;
+    
+    UPROPERTY(VisibleAnywhere, Category="Soil Readings")
+    float SoilpH;
 
-private:
+    UPROPERTY(VisibleAnywhere, Category="Soil Readings")
+    float SoilHumidity;
+
+    UPROPERTY(VisibleAnywhere, Category="Soil Readings")
+    float SoilTemperature;
+    
+    UPROPERTY(VisibleAnywhere, Category="Soil Readings")
+    float SoilSolarIrradiance;
+    
+    UPROPERTY(VisibleAnywhere, Category="Soil Readings")
+    TMap<FString, float> SoilChemicalComposition;
+    
+    UPROPERTY(EditAnywhere, Category="Environment")
+    UMyEnvironmentState* EnvironmentState;
+    
+    
 };
