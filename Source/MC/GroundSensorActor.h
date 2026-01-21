@@ -27,7 +27,7 @@ protected:
     void timerAction();
     FTimerHandle TimerHandle_Action;
     
-    UPROPERTY(VisibleAnywhere, Category="Soil Readings")
+    UPROPERTY(VisibleAnywhere, Category = "Soil Readings", meta = (DisplayName = "Soil pH"))
     float SoilpH;
 
     UPROPERTY(VisibleAnywhere, Category="Soil Readings")
