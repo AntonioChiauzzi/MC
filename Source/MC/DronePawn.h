@@ -22,7 +22,7 @@ public:
     float BatteryLevel = 100.0f;
 
     UPROPERTY(EditAnywhere)
-    float BatteryConsumptionRate = 1.0f;
+    float BatteryConsumptionRate = 0.1f;
 
     virtual void Tick(float DeltaTime) override;
     virtual void ConfigureFromJson(const TSharedPtr<FJsonObject>& Json) override;

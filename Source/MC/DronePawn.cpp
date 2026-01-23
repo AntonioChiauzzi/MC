@@ -14,6 +14,7 @@ void ADronePawn::Tick(float DeltaTime)
         if (BatteryLevel <= 0.0f)
         {
             Velocity = FVector::ZeroVector;
+            UE_LOG(LogTemp, Log, TEXT("Drone scarico"));
             return;
         }
         FVector NewLoc = GetActorLocation() + (Velocity * DeltaTime);

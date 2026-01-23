@@ -14,6 +14,7 @@ void ATractorPawn::Tick(float DeltaTime)
         if (BatteryLevel <= 0.0f)
         {
             Velocity = FVector::ZeroVector;
+            UE_LOG(LogTemp, Log, TEXT("Trattore senza carburante"));
             return;
         }
         FVector NewLoc = GetActorLocation() + (Velocity * DeltaTime);

@@ -11,6 +11,7 @@ void AHarvesterPawn::Tick(float DeltaTime)
         if (BatteryLevel <= 0.0f)
         {
             Velocity = FVector::ZeroVector;
+            UE_LOG(LogTemp, Log, TEXT("Raccoglitrice senza carburante"));
             return;
         }
 

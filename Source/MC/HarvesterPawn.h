@@ -22,7 +22,7 @@ public:
     float BatteryLevel = 100.0f;
 
     UPROPERTY(EditAnywhere)
-    float BatteryConsumptionRate = 2.0f; 
+    float BatteryConsumptionRate = 0.5f; 
 
     UPROPERTY(EditAnywhere)
     float HarvestCapacity = 0.0f; 
