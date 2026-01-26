@@ -8,22 +8,22 @@ void AHarvesterPawn::Tick(float DeltaTime)
     if (BatteryLevel > 0.0f)
     {
         BatteryLevel = FMath::Max(0.0f, BatteryLevel - (BatteryConsumptionRate * DeltaTime));
-        if (BatteryLevel <= 0.0f)
-        {
-            Velocity = FVector::ZeroVector;
-            UE_LOG(LogTemp, Log, TEXT("Raccoglitrice senza carburante"));
-            return;
-        }
-
-        FVector NewLoc = GetActorLocation() + (Velocity * DeltaTime);
-        NewLoc.X = FMath::Clamp(NewLoc.X, MapMin.X, MapMax.X);
-        NewLoc.Y = FMath::Clamp(NewLoc.Y, MapMin.Y, MapMax.Y);
-        SetActorLocation(NewLoc);
-
+        if (BatteryLevel <= 0.0f) { Velocity = FVector::ZeroVector; return; }
         if (!Velocity.IsNearlyZero())
         {
-            HarvestCapacity += 0.1f * DeltaTime;
+            FRotator TargetRotation = Velocity.Rotation();
+            TargetRotation.Pitch = 0.0f;
+            TargetRotation.Roll = 0.0f;
+            SetActorRotation(FMath::RInterpTo(GetActorRotation(), TargetRotation, DeltaTime, 3.0f));
         }
+        FVector NewLoc = GetActorLocation() + (Velocity * DeltaTime);
+        if (NewLoc.X < MapMin.X || NewLoc.X > MapMax.X || NewLoc.Y < MapMin.Y || NewLoc.Y > MapMax.Y)
+        {
+            Velocity = FVector::ZeroVector;
+            return;
+        }
+        SetActorLocation(NewLoc);
+        if (!Velocity.IsNearlyZero()) HarvestCapacity += 0.1f * DeltaTime;
     }
 }
 
