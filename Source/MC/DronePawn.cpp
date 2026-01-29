@@ -2,7 +2,15 @@
 
 ADronePawn::ADronePawn()
 {
+    PrimaryActorTick.bCanEverTick = true;
     Velocity = FVector::ZeroVector;
+}
+
+
+void ADronePawn::BeginPlay()
+{
+    Super::BeginPlay();
+    ApplyAutoScalingToMesh();
 }
 
 void ADronePawn::Tick(float DeltaTime)
@@ -11,23 +19,68 @@ void ADronePawn::Tick(float DeltaTime)
     if (BatteryLevel > 0.0f)
     {
         BatteryLevel = FMath::Max(0.0f, BatteryLevel - (BatteryConsumptionRate * DeltaTime));
-        if (BatteryLevel <= 0.0f) { Velocity = FVector::ZeroVector; return; }
-        if (!Velocity.IsNearlyZero())
-        {
-            FRotator TargetRotation = Velocity.Rotation();
-            SetActorRotation(FMath::RInterpTo(GetActorRotation(), TargetRotation, DeltaTime, 5.0f));
-        }
-        FVector NewLoc = GetActorLocation() + (Velocity * DeltaTime);
-        if (NewLoc.X < MapMin.X || NewLoc.X > MapMax.X ||
-            NewLoc.Y < MapMin.Y || NewLoc.Y > MapMax.Y ||
-            NewLoc.Z < 0.0f || NewLoc.Z > 2000.0f)
+        if (BatteryLevel <= 0.0f)
         {
             Velocity = FVector::ZeroVector;
             return;
         }
-        SetActorLocation(NewLoc);
+        if (TargetLocation.IsSet())
+        {
+            MoveToTarget(DeltaTime, TargetLocation.GetValue());
+        }
+        else if (!Velocity.IsNearlyZero())
+        {
+            Move(DeltaTime);
+        }
         ReadValueFromSoil();
     }
+}
+
+void ADronePawn::Move(float DeltaTime)
+{
+    FRotator TargetRotation = Velocity.Rotation();
+    SetActorRotation(FMath::RInterpTo(GetActorRotation(), TargetRotation, DeltaTime, 5.0f));
+    FVector NewLoc = GetActorLocation() + (Velocity * DeltaTime);
+    if (NewLoc.X < MapMin.X || NewLoc.X > MapMax.X ||
+        NewLoc.Y < MapMin.Y || NewLoc.Y > MapMax.Y ||
+        NewLoc.Z < 0.0f || NewLoc.Z > 2000.0f)
+    {
+        Velocity = FVector::ZeroVector;
+        return;
+    }
+    SetActorLocation(NewLoc);
+}
+
+void ADronePawn::MoveToTarget(float DeltaTime, FVector Target)
+{
+    FVector CurrentLoc = GetActorLocation();
+    float Speed = Velocity.Size();
+    if (Speed <= 0.0f) Speed = 400.0f;
+    float Distance = FVector::Dist(CurrentLoc, Target);
+    if (Distance < FMath::Max(15.0f, Speed * DeltaTime))
+    {
+        SetActorLocation(Target);
+        Velocity = FVector::ZeroVector;
+        TargetLocation.Reset();
+        return;
+    }
+    FVector Direction = (Target - CurrentLoc).GetSafeNormal();
+    SetActorRotation(FMath::RInterpTo(GetActorRotation(), Direction.Rotation(), DeltaTime, 5.0f));
+    FVector NewLoc = CurrentLoc + (Direction * Speed * DeltaTime);
+    if (NewLoc.X < MapMin.X || NewLoc.X > MapMax.X ||
+        NewLoc.Y < MapMin.Y || NewLoc.Y > MapMax.Y ||
+        NewLoc.Z < 0.0f || NewLoc.Z > 2000.0f)
+    {
+        Velocity = FVector::ZeroVector;
+        TargetLocation.Reset();
+        return;
+    }
+    SetActorLocation(NewLoc);
+}
+
+void ADronePawn::SetTargetLocation(TOptional<FVector> NewTarget)
+{
+    TargetLocation = NewTarget;
 }
 
 void ADronePawn::ConfigureFromJson(const TSharedPtr<FJsonObject>& Json)
@@ -80,5 +133,34 @@ void ADronePawn::ReadValueFromSoil()
     for (const auto& KVP : Environment->SoilChemicalComposition)
     {
         UE_LOG(LogTemp, Log, TEXT("Chemical %s: %f"), *KVP.Key, KVP.Value);
+    }
+}
+
+void ADronePawn::ApplyAutoScalingToMesh()
+{
+    TArray<UStaticMeshComponent*> MeshComps;
+    GetComponents<UStaticMeshComponent>(MeshComps);
+    if (MeshComps.Num() == 0)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Nessuna StaticMesh trovata nel Blueprint!"));
+        return;
+    }
+    for (UStaticMeshComponent* CurrentMesh : MeshComps)
+    {
+        if (CurrentMesh && CurrentMesh->GetStaticMesh())
+        {
+            FBox SphereBox = CurrentMesh->GetStaticMesh()->GetBoundingBox();
+            FVector RawSize = SphereBox.GetSize();
+            if (RawSize.X > 1.0f)
+            {
+                float ScaleX = MaxDimensions.X / RawSize.X;
+                float ScaleY = MaxDimensions.Y / RawSize.Y;
+                float ScaleZ = MaxDimensions.Z / RawSize.Z;
+                float UniformScale = FMath::Min3(ScaleX, ScaleY, ScaleZ);
+                CurrentMesh->SetRelativeScale3D(FVector(UniformScale));
+                CurrentMesh->UpdateBounds();
+                UE_LOG(LogTemp, Warning, TEXT("Mesh '%s' scalata a %f"), *CurrentMesh->GetName(), UniformScale);
+            }
+        }
     }
 }

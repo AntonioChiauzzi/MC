@@ -3,10 +3,11 @@
 #include "CoreMinimal.h"
 #include "MyBaseActor.h"
 #include "EntityConfigurable.h"
+#include "MovableVehicle.h"
 #include "TractorPawn.generated.h"
 
 UCLASS()
-class MC_API ATractorPawn : public AMyBaseActor,  public IEntityConfigurable
+class MC_API ATractorPawn : public AMyBaseActor,  public IEntityConfigurable, public IMovableVehicle
 {
     GENERATED_BODY()
 
@@ -16,14 +17,25 @@ public:
     UPROPERTY()
     FVector Velocity;
 
+    TOptional<FVector> TargetLocation;
 
-    UPROPERTY(BlueprintReadWrite)
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
     float BatteryLevel = 100.0f;
 
     UPROPERTY(EditAnywhere)
-    float BatteryConsumptionRate = 0.8f;
+    float BatteryConsumptionRate = 0.1f;
 
     virtual void Tick(float DeltaTime) override;
+
+    virtual void SetTargetLocation(TOptional<FVector> NewTarget) override;
+    virtual void Move(float DeltaTime) override;
+    virtual void MoveToTarget(float DeltaTime, FVector Target) override;
+
+    UPROPERTY(EditAnywhere, Category = "Visuals")
+    FVector MaxDimensions = FVector(350.0f, 200.0f, 250.0f); 
+
+    void ApplyAutoScalingToMesh();
+
     virtual void ConfigureFromJson(const TSharedPtr<FJsonObject>& Json) override;
     
     virtual void SaveToJson(const TSharedPtr<FJsonObject>& Json) override;
@@ -31,5 +43,5 @@ public:
     virtual FString GetEntityType() const override;
 
 protected:
-
+    virtual void BeginPlay() override;
 };

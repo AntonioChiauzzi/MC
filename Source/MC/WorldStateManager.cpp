@@ -12,6 +12,7 @@
 #include "EntityConfigurable.h"
 #include "Landscape.h"
 #include "LandscapeProxy.h"
+#include "MovableVehicle.h"
 #include "MyBaseActor.h"
 
 
@@ -202,6 +203,24 @@ void UWorldStateManager::LoadEntities()
 #if WITH_EDITOR
             A->SetActorLabel(MyBaseActor->Name);
 #endif
+        }
+
+        const TSharedPtr<FJsonObject>* TargetObjPtr;
+        if (Obj->TryGetObjectField(TEXT("targetlocation"), TargetObjPtr))
+        {
+            auto TargetObj = *TargetObjPtr;
+            FVector TLoc(
+                TargetObj->GetNumberField(TEXT("x")),
+                TargetObj->GetNumberField(TEXT("y")),
+                TargetObj->GetNumberField(TEXT("z"))
+            );
+            if (TLoc.X >= MinBound.X && TLoc.X <= MaxBound.X && TLoc.Y >= MinBound.Y && TLoc.Y <= MaxBound.Y)
+            {
+                if (IMovableVehicle* Movable = Cast<IMovableVehicle>(A))
+                {
+                    Movable->SetTargetLocation(TLoc);
+                }
+            }
         }
 
         if (A->GetClass()->ImplementsInterface(UEntityConfigurable::StaticClass()))
