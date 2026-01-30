@@ -21,10 +21,10 @@ void AMyGameMode::BeginPlay()
 
     if (WorldManager)
     {
+        WorldManager->OpenDirectoryDialog();
         WorldManager->EntityRegistryAsset = RegistryConfig;
         WorldManager->Initialize(GetWorld());
-        WorldManager->LoadEnvironment();
-        WorldManager->LoadEntities();
+        Load();
     }
     GetWorldTimerManager().SetTimer(
         SaveTimerHandle,
@@ -33,10 +33,28 @@ void AMyGameMode::BeginPlay()
         1800.0f,
         true
     );
+    GetWorldTimerManager().SetTimer(
+        LoadTimerHandle,
+        this,
+        &AMyGameMode::Load,
+        60.0f,
+        true
+    );
 }
 
 void AMyGameMode::SaveWorld()
 {
     if (WorldManager)
         WorldManager->SaveEntities();
+}
+
+void AMyGameMode::Load()
+{
+    if (WorldManager)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("--- LOAD JSON STARTED ---"));
+        WorldManager->RemoveOldInstances();
+        WorldManager->LoadEnvironment();
+        WorldManager->LoadEntities();
+    }
 }

@@ -129,14 +129,7 @@ void ADronePawn::ReadValueFromSoil()
     if (!IsValid(Environment)) return;
 
     UE_LOG(LogTemp, Log, TEXT("--- Ground Sensor Readings ---"));
-    UE_LOG(LogTemp, Log, TEXT("Soil Temp: %f"), Environment->SoilTemperature);
-    UE_LOG(LogTemp, Log, TEXT("Soil Humidity: %f"), Environment->SoilHumidity);
-    UE_LOG(LogTemp, Log, TEXT("Soil pH: %f"), Environment->SoilpH);
-
-    for (const auto& KVP : Environment->SoilChemicalComposition)
-    {
-        UE_LOG(LogTemp, Log, TEXT("Chemical %s: %f"), *KVP.Key, KVP.Value);
-    }
+    UE_LOG(LogTemp, Log, TEXT("Crop Maturity: %f"), Environment->cropMaturity);
 }
 
 void ADronePawn::ApplyAutoScalingToMesh()

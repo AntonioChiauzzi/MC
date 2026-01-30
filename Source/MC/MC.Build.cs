@@ -15,7 +15,11 @@ public class MC : ModuleRules
 		"EnhancedInput",
 		"Json",
 		"JsonUtilities",
-		"Landscape" });
+		"Landscape",
+		"DesktopPlatform",
+        "MainFrame",
+		"Slate",     
+		"SlateCore"});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 

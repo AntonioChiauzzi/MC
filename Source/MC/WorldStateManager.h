@@ -26,6 +26,13 @@ public:
     void LoadEntities();
     void SaveEntities();
 
+    UPROPERTY(EditAnywhere)
+    FString BaseDataPath;
+
+    void OpenDirectoryDialog();
+
+    void RemoveOldInstances();
+
     UPROPERTY(EditAnywhere, Category = "Registry")
     UEntityRegistryDataAsset* EntityRegistryAsset;
 

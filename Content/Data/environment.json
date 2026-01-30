@@ -1,6 +1,5 @@
 {
   "environment": {
-    "type": "flat",
     "soilTemperature": 20,
     "soilHumidity": 70,
     "soilSolarIrradiance": 400,

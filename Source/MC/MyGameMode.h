@@ -28,4 +28,8 @@ private:
     FTimerHandle SaveTimerHandle;
 
     void SaveWorld();
+
+protected:
+    void Load();
+    FTimerHandle LoadTimerHandle;
 };

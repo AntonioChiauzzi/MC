@@ -15,7 +15,6 @@ void ATractorPawn::BeginPlay()
 void ATractorPawn::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-
     if (BatteryLevel > 0.0f)
     {
         if (BatteryLevel <= 0.0f)

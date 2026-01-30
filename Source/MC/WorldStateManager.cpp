@@ -4,6 +4,10 @@
 #include "JsonUtilities.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "Developer/DesktopPlatform/Public/IDesktopPlatform.h"
+#include "Developer/DesktopPlatform/Public/DesktopPlatformModule.h"
+#include "Framework/Application/SlateApplication.h"
+#include <Editor/MainFrame/Private/MainFrameModule.h>
 #include "EngineUtils.h"
 #include "TractorPawn.h"
 #include "DronePawn.h"
@@ -35,7 +39,7 @@ void UWorldStateManager::Initialize(UWorld* InWorld)
 void UWorldStateManager::LoadEnvironment()
 {
     FString JsonString;
-    const FString FilePath = FPaths::ProjectContentDir() + TEXT("Data/environment.json");
+    const FString FilePath = BaseDataPath + TEXT("environment.json");
 
     if (!FFileHelper::LoadFileToString(JsonString, *FilePath)) return;
 
@@ -148,7 +152,7 @@ void UWorldStateManager::LoadEntities()
     UE_LOG(LogTemp, Log, TEXT("Confini Landscape Finali: Min %s - Max %s"), *MinBound.ToString(), *MaxBound.ToString());
 
     FString Json;
-    const FString FilePath = FPaths::ProjectContentDir() + TEXT("Data/entities.json");
+    const FString FilePath = BaseDataPath + TEXT("entities.json");
     if (!FFileHelper::LoadFileToString(Json, *FilePath)) return;
 
     TSharedPtr<FJsonObject> Root;
@@ -249,6 +253,25 @@ void UWorldStateManager::LoadEntities()
     }
 }
 
+void UWorldStateManager::RemoveOldInstances()
+{
+    for (AActor* Actor : SpawnedEntities) {
+        if (Actor && Actor->IsValidLowLevel()) {
+            Actor->Destroy();
+        }
+    }
+    SpawnedEntities.Empty();
+    if (ResourceManager)
+    {
+        for (AActor* Actor : ResourceManager->ManagedEntities) {
+            if (Actor && Actor->IsValidLowLevel()) {
+                Actor->Destroy();
+            }
+        }
+        ResourceManager->ManagedEntities.Empty();
+    }
+    UE_LOG(LogTemp, Warning, TEXT("Entità distrutte"));
+}
 
 void UWorldStateManager::SaveEntities()
 {
@@ -317,7 +340,31 @@ void UWorldStateManager::SaveEntities()
     TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&Output);
     if (FJsonSerializer::Serialize(RootObject.ToSharedRef(), Writer))
     {
-        FString FilePath = FPaths::ProjectContentDir() + TEXT("Data/entities.json");
+        FString FilePath = BaseDataPath + TEXT("entities.json");
         FFileHelper::SaveStringToFile(Output, *FilePath);
     }
+}
+
+void UWorldStateManager::OpenDirectoryDialog()
+{
+    IDesktopPlatform* DesktopPlatform = FDesktopPlatformModule::Get();
+    FString SelectedDirectory;
+    if (DesktopPlatform)
+    {
+        DesktopPlatform->OpenDirectoryDialog(
+            nullptr,
+            TEXT("Seleziona la cartella contenente i file JSON"),
+            FPaths::ProjectContentDir(),
+            SelectedDirectory
+        );
+    }
+    if (!SelectedDirectory.IsEmpty())
+    {
+        BaseDataPath = SelectedDirectory + TEXT("/");
+    }
+    else
+    {
+        BaseDataPath = FPaths::ProjectContentDir() + TEXT("Data/");
+    }
+    UE_LOG(LogTemp, Warning, TEXT("Path selezionato: %s"), *BaseDataPath);
 }
