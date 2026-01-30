@@ -22,7 +22,7 @@ public:
     TOptional<FVector> TargetLocation;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-    float BatteryLevel = 100.0f;
+    float BatteryLevel;
 
     UPROPERTY(EditAnywhere)
     float BatteryConsumptionRate = 0.5f;

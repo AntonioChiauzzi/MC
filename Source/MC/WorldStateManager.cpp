@@ -7,6 +7,7 @@
 #include "EngineUtils.h"
 #include "TractorPawn.h"
 #include "DronePawn.h"
+#include "HarvesterPawn.h"
 #include "GroundSensorActor.h"
 #include "WeatherStationActor.h"
 #include "EntityConfigurable.h"
@@ -275,22 +276,38 @@ void UWorldStateManager::SaveEntities()
         Loc->SetNumberField(TEXT("z"), FMath::Max(0.0f, L.Z));
         EntityObj->SetObjectField(TEXT("location"), Loc);
 
+        TSharedPtr<FJsonObject> Params = MakeShared<FJsonObject>();
         if (MyBaseActor->Implements<UEntityConfigurable>())
         {
-            TSharedPtr<FJsonObject> Params = MakeShared<FJsonObject>();
-
             if (MyBaseActor->GetClass()->ImplementsInterface(UEntityConfigurable::StaticClass()))
                 if (IEntityConfigurable* Configurable = Cast<IEntityConfigurable>(MyBaseActor))
                 {
                     Configurable->SaveToJson(Params);
                 }
-
             if (Params->Values.Num() > 0)
             {
                 EntityObj->SetObjectField(TEXT("params"), Params);
             }
         }
 
+        TOptional<FVector> CurrentTarget;
+        if (ATractorPawn* Tractor = Cast<ATractorPawn>(MyBaseActor)) {
+            CurrentTarget = Tractor->TargetLocation;
+        }
+        else if (ADronePawn* Drone = Cast<ADronePawn>(MyBaseActor)) {
+            CurrentTarget = Drone->TargetLocation;
+        }
+        else if (AHarvesterPawn* Harvester = Cast<AHarvesterPawn>(MyBaseActor)) {
+            CurrentTarget = Harvester->TargetLocation;
+        }
+        if (CurrentTarget.IsSet())
+        {
+            TSharedPtr<FJsonObject> TObj = MakeShared<FJsonObject>();
+            TObj->SetNumberField(TEXT("x"), CurrentTarget.GetValue().X);
+            TObj->SetNumberField(TEXT("y"), CurrentTarget.GetValue().Y);
+            TObj->SetNumberField(TEXT("z"), CurrentTarget.GetValue().Z);
+            Params->SetObjectField(TEXT("targetLocation"), TObj);
+        }
         EntitiesArray.Add(MakeShared<FJsonValueObject>(EntityObj));
     }
 

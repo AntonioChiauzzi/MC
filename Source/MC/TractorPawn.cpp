@@ -18,8 +18,6 @@ void ATractorPawn::Tick(float DeltaTime)
 
     if (BatteryLevel > 0.0f)
     {
-        BatteryLevel = FMath::Max(0.0f, BatteryLevel - (BatteryConsumptionRate * DeltaTime));
-
         if (BatteryLevel <= 0.0f)
         {
             Velocity = FVector::ZeroVector;
@@ -29,10 +27,12 @@ void ATractorPawn::Tick(float DeltaTime)
         if (TargetLocation.IsSet())
         {
             MoveToTarget(DeltaTime, TargetLocation.GetValue());
+            BatteryLevel = FMath::Max(0.0f, BatteryLevel - (BatteryConsumptionRate * DeltaTime));
         }
         else if (!Velocity.IsNearlyZero())
         {
             Move(DeltaTime);
+            BatteryLevel = FMath::Max(0.0f, BatteryLevel - (BatteryConsumptionRate * DeltaTime));
         }
     }
 }
@@ -101,7 +101,10 @@ void ATractorPawn::ConfigureFromJson(const TSharedPtr<FJsonObject>& Json)
         Velocity.Z = (*SpeedObj)->GetNumberField(TEXT("z"));
     }
 
-    (*Params)->TryGetNumberField(TEXT("battery"), BatteryLevel);
+    if (!(*Params)->TryGetNumberField(TEXT("battery"), BatteryLevel))
+    {
+        BatteryLevel = 100.0f;
+    }
 }
 
 void ATractorPawn::SaveToJson(const TSharedPtr<FJsonObject>& Json)

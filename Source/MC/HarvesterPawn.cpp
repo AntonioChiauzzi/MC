@@ -16,7 +16,6 @@ void AHarvesterPawn::Tick(float DeltaTime)
     Super::Tick(DeltaTime);
     if (BatteryLevel > 0.0f)
     {
-        BatteryLevel = FMath::Max(0.0f, BatteryLevel - (BatteryConsumptionRate * DeltaTime));
         if (BatteryLevel <= 0.0f)
         {
             Velocity = FVector::ZeroVector;
@@ -25,10 +24,12 @@ void AHarvesterPawn::Tick(float DeltaTime)
         if (TargetLocation.IsSet())
         {
             MoveToTarget(DeltaTime, TargetLocation.GetValue());
+            BatteryLevel = FMath::Max(0.0f, BatteryLevel - (BatteryConsumptionRate * DeltaTime));
         }
         else if (!Velocity.IsNearlyZero())
         {
             Move(DeltaTime);
+            BatteryLevel = FMath::Max(0.0f, BatteryLevel - (BatteryConsumptionRate * DeltaTime));
         }
         if (!GetVelocity().IsNearlyZero() || (TargetLocation.IsSet() && !Velocity.IsNearlyZero()))
         {
@@ -101,7 +102,10 @@ void AHarvesterPawn::ConfigureFromJson(const TSharedPtr<FJsonObject>& Json)
         Velocity.Z = (*SpeedObj)->GetNumberField(TEXT("z"));
     }
 
-    (*Params)->TryGetNumberField(TEXT("battery"), BatteryLevel);
+    if (!(*Params)->TryGetNumberField(TEXT("battery"), BatteryLevel))
+    {
+        BatteryLevel = 100.0f;
+    }
     (*Params)->TryGetNumberField(TEXT("harvestCapacity"), HarvestCapacity);
 }
 

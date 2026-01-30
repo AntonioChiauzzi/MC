@@ -18,7 +18,6 @@ void ADronePawn::Tick(float DeltaTime)
     Super::Tick(DeltaTime);
     if (BatteryLevel > 0.0f)
     {
-        BatteryLevel = FMath::Max(0.0f, BatteryLevel - (BatteryConsumptionRate * DeltaTime));
         if (BatteryLevel <= 0.0f)
         {
             Velocity = FVector::ZeroVector;
@@ -27,10 +26,12 @@ void ADronePawn::Tick(float DeltaTime)
         if (TargetLocation.IsSet())
         {
             MoveToTarget(DeltaTime, TargetLocation.GetValue());
+            BatteryLevel = FMath::Max(0.0f, BatteryLevel - (BatteryConsumptionRate * DeltaTime));
         }
         else if (!Velocity.IsNearlyZero())
         {
             Move(DeltaTime);
+            BatteryLevel = FMath::Max(0.0f, BatteryLevel - (BatteryConsumptionRate * DeltaTime));
         }
         ReadValueFromSoil();
     }
@@ -95,8 +96,10 @@ void ADronePawn::ConfigureFromJson(const TSharedPtr<FJsonObject>& Json)
         Velocity.Y = (*SpeedObj)->GetNumberField(TEXT("y"));
         Velocity.Z = (*SpeedObj)->GetNumberField(TEXT("z"));
     }
-
-    (*Params)->TryGetNumberField(TEXT("battery"), BatteryLevel);
+    if (!(*Params)->TryGetNumberField(TEXT("battery"), BatteryLevel))
+    {
+        BatteryLevel = 100.0f;
+    }
 }
 
 FString ADronePawn::GetEntityType() const 
