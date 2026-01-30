@@ -11,9 +11,9 @@
 			},
 			"params": {
 				"speed": {
-					"x": 30,
-					"y": 10,
-					"z": 1
+					"x": -20,
+					"y": 70,
+					"z": 15
 				},
 				"battery": 30
 			}
@@ -23,14 +23,14 @@
 			"name":"Trattore1",
 			"type": "Tractor",
 			"location": {
-				"x": 0,
-				"y": 0,
+				"x": -3000,
+				"y": -2500,
 				"z": 0
 			},
 			"params": {
 				"speed": {
-					"x": 10,
-					"y": 5,
+					"x": 0,
+					"y": 40,
 					"z": 0
 				},
 				"battery": 100
@@ -41,8 +41,8 @@
 			"name":"StazioneMeteo1",
 			"type": "WeatherStation",
 			"location": {
-				"x": 0,
-				"y": 0,
+				"x": -1000,
+				"y": -3000,
 				"z": 0
 			}
 		},
@@ -51,8 +51,8 @@
 			"name":"SensoreTerreno1",
 			"type": "GroundSensor",
 			"location": {
-				"x": 0,
-				"y": 0,
+				"x": 3000,
+				"y": 150,
 				"z": 0
 			}
 		},
@@ -61,17 +61,22 @@
 			"name":"Trattore2",
 			"type": "Tractor",
 			"location": {
-				"x": 15,
-				"y": 36,
+				"x": 100,
+				"y": 250,
 				"z": 0
 			},
 			"params": {
 				"speed": {
-					"x": 0,
-					"y": 0,
+					"x": 24,
+					"y": 32,
 					"z": 0
 				},
 				"battery": 85
+			},
+			"targetLocation": {
+				"x": 1000,
+				"y": 1350,
+				"z": 0
 			}
 		},
 		{
@@ -79,8 +84,8 @@
 			"name":"StazioneMeteo2",
 			"type": "WeatherStation",
 			"location": {
-				"x": 50,
-				"y": 50,
+				"x": 2000,
+				"y": 3000,
 				"z": 0
 			}
 		},
@@ -89,13 +94,13 @@
 			"name":"Raccoglitrice1",
 			"type": "Harvester",
 			"location": {
-				"x": 100,
-				"y": 50,
+				"x": -100,
+				"y": -450,
 				"z": 0
 			},
 			"params": {
 				"speed": {
-					"x": 0,
+					"x": 20,
 					"y": 0,
 					"z": 0
 				},

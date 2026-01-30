@@ -207,7 +207,7 @@ void UWorldStateManager::LoadEntities()
         }
 
         const TSharedPtr<FJsonObject>* TargetObjPtr;
-        if (Obj->TryGetObjectField(TEXT("targetlocation"), TargetObjPtr))
+        if (Obj->TryGetObjectField(TEXT("targetLocation"), TargetObjPtr))
         {
             auto TargetObj = *TargetObjPtr;
             FVector TLoc(
