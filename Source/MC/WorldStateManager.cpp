@@ -19,6 +19,7 @@
 #include "LandscapeProxy.h"
 #include "MovableVehicle.h"
 #include "MyBaseActor.h"
+#include "MCGameInstance.h"
 
 
 
@@ -353,18 +354,18 @@ void UWorldStateManager::OpenDirectoryDialog()
     {
         DesktopPlatform->OpenDirectoryDialog(
             nullptr,
-            TEXT("Seleziona la cartella contenente i file JSON"),
+            TEXT("Seleziona la cartella contenente NewMap.umap e i JSON"),
             FPaths::ProjectContentDir(),
             SelectedDirectory
         );
     }
-    if (!SelectedDirectory.IsEmpty())
+    if (SelectedDirectory.IsEmpty())
     {
-        BaseDataPath = SelectedDirectory + TEXT("/");
+        SelectedDirectory = FPaths::ProjectContentDir() + TEXT("Data");
     }
-    else
+    BaseDataPath = FPaths::Combine(SelectedDirectory, TEXT("/"));
+    if (UMCGameInstance* GI = Cast<UMCGameInstance>(GetWorld()->GetGameInstance()))
     {
-        BaseDataPath = FPaths::ProjectContentDir() + TEXT("Data/");
+        GI->SavedBaseDataPath = BaseDataPath;
     }
-    UE_LOG(LogTemp, Warning, TEXT("Path selezionato: %s"), *BaseDataPath);
 }

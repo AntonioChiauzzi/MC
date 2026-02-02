@@ -16,25 +16,27 @@ void AHarvesterPawn::Tick(float DeltaTime)
     Super::Tick(DeltaTime);
     if (BatteryLevel > 0.0f)
     {
-        if (BatteryLevel <= 0.0f)
-        {
-            Velocity = FVector::ZeroVector;
-            return;
-        }
+        bool bIsMoving = false;
         if (TargetLocation.IsSet())
         {
             MoveToTarget(DeltaTime, TargetLocation.GetValue());
-            BatteryLevel = FMath::Max(0.0f, BatteryLevel - (BatteryConsumptionRate * DeltaTime));
+            bIsMoving = !Velocity.IsNearlyZero();
         }
         else if (!Velocity.IsNearlyZero())
         {
             Move(DeltaTime);
-            BatteryLevel = FMath::Max(0.0f, BatteryLevel - (BatteryConsumptionRate * DeltaTime));
+            bIsMoving = true;
         }
-        if (!GetVelocity().IsNearlyZero() || (TargetLocation.IsSet() && !Velocity.IsNearlyZero()))
+        BatteryLevel = FMath::Max(0.0f, BatteryLevel - (BatteryConsumptionRate * DeltaTime));
+        if (bIsMoving)
         {
             HarvestCapacity += 0.1f * DeltaTime;
+            HarvestCapacity = FMath::Min(HarvestCapacity, 100.0f);
         }
+    }
+    else
+    {
+        Velocity = FVector::ZeroVector;
     }
 }
 

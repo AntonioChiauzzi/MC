@@ -2,6 +2,9 @@
 #include "WorldStateManager.h"
 #include "EntityRegistryDataAsset.h"
 #include "UObject/ConstructorHelpers.h"
+#include <Kismet/GameplayStatics.h>
+#include "../../../../../../../EpicGames/UE_5.7/Engine/Plugins/VirtualProduction/TextureShare/Source/TextureShareCore/Private/Module/TextureShareCoreLogDefines.h"
+#include "MCGameInstance.h"
 
 AMyGameMode::AMyGameMode()
 {
@@ -17,14 +20,27 @@ void AMyGameMode::BeginPlay()
 {
     Super::BeginPlay();
 
+    UMCGameInstance* GI = Cast<UMCGameInstance>(GetGameInstance());
     WorldManager = NewObject<UWorldStateManager>(this);
 
-    if (WorldManager)
+    if (GI && WorldManager)
     {
-        WorldManager->OpenDirectoryDialog();
+        if (GI->SavedBaseDataPath.IsEmpty())
+        {
+            WorldManager->OpenDirectoryDialog();
+
+            if (!WorldManager->BaseDataPath.IsEmpty())
+            {
+                GI->SavedBaseDataPath = WorldManager->BaseDataPath;
+                UploadMap();
+            }
+            return;
+        }
+
+        WorldManager->BaseDataPath = GI->SavedBaseDataPath;
         WorldManager->EntityRegistryAsset = RegistryConfig;
         WorldManager->Initialize(GetWorld());
-        Load();
+        Load(); 
     }
     GetWorldTimerManager().SetTimer(
         SaveTimerHandle,
@@ -56,5 +72,18 @@ void AMyGameMode::Load()
         WorldManager->RemoveOldInstances();
         WorldManager->LoadEnvironment();
         WorldManager->LoadEntities();
+    }
+}
+
+void AMyGameMode::UploadMap()
+{
+    UMCGameInstance* GI = Cast<UMCGameInstance>(GetGameInstance());
+    if (GI && !GI->SavedBaseDataPath.IsEmpty())
+    {
+        FString MapFullPath = GI->SavedBaseDataPath + TEXT("NewMap.umap");
+        if (FPaths::FileExists(MapFullPath))
+        {
+            UGameplayStatics::OpenLevel(GetWorld(), FName(*MapFullPath));
+        }
     }
 }

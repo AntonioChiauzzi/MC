@@ -29,6 +29,8 @@ private:
 
     void SaveWorld();
 
+    void UploadMap();
+
 protected:
     void Load();
     FTimerHandle LoadTimerHandle;

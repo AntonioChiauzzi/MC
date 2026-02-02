@@ -7,8 +7,9 @@ public class MC : ModuleRules
 	public MC(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", 
+        CppCompileWarningSettings.UndefinedIdentifierWarningLevel = WarningLevel.Warning;
+
+        PublicDependencyModuleNames.AddRange(new string[] { "Core", 
 		"CoreUObject", 
 		"Engine", 
 		"InputCore", 

@@ -18,22 +18,20 @@ void ADronePawn::Tick(float DeltaTime)
     Super::Tick(DeltaTime);
     if (BatteryLevel > 0.0f)
     {
-        if (BatteryLevel <= 0.0f)
-        {
-            Velocity = FVector::ZeroVector;
-            return;
-        }
         if (TargetLocation.IsSet())
         {
             MoveToTarget(DeltaTime, TargetLocation.GetValue());
-            BatteryLevel = FMath::Max(0.0f, BatteryLevel - (BatteryConsumptionRate * DeltaTime));
         }
         else if (!Velocity.IsNearlyZero())
         {
             Move(DeltaTime);
-            BatteryLevel = FMath::Max(0.0f, BatteryLevel - (BatteryConsumptionRate * DeltaTime));
         }
+        BatteryLevel = FMath::Max(0.0f, BatteryLevel - (BatteryConsumptionRate * DeltaTime));
         ReadValueFromSoil();
+    }
+    else
+    {
+        Velocity = FVector::ZeroVector;
     }
 }
 
