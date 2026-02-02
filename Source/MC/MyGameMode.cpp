@@ -19,16 +19,13 @@ AMyGameMode::AMyGameMode()
 void AMyGameMode::BeginPlay()
 {
     Super::BeginPlay();
-
     UMCGameInstance* GI = Cast<UMCGameInstance>(GetGameInstance());
     WorldManager = NewObject<UWorldStateManager>(this);
-
     if (GI && WorldManager)
     {
         if (GI->SavedBaseDataPath.IsEmpty())
         {
             WorldManager->OpenDirectoryDialog();
-
             if (!WorldManager->BaseDataPath.IsEmpty())
             {
                 GI->SavedBaseDataPath = WorldManager->BaseDataPath;
@@ -36,26 +33,24 @@ void AMyGameMode::BeginPlay()
             }
             return;
         }
-
+        UE_LOG(LogTemp, Log, TEXT("Path recuperato dalla GameInstance: %s"), *GI->SavedBaseDataPath);
         WorldManager->BaseDataPath = GI->SavedBaseDataPath;
         WorldManager->EntityRegistryAsset = RegistryConfig;
         WorldManager->Initialize(GetWorld());
-        Load(); 
+        Load();
+        GetWorldTimerManager().SetTimer(
+            SaveTimerHandle, 
+            this, 
+            &AMyGameMode::SaveWorld, 
+            1800.0f, 
+            true);
+        GetWorldTimerManager().SetTimer(
+            LoadTimerHandle, 
+            this, 
+            &AMyGameMode::Load, 
+            60.0f, 
+            true);
     }
-    GetWorldTimerManager().SetTimer(
-        SaveTimerHandle,
-        this,
-        &AMyGameMode::SaveWorld,
-        1800.0f,
-        true
-    );
-    GetWorldTimerManager().SetTimer(
-        LoadTimerHandle,
-        this,
-        &AMyGameMode::Load,
-        60.0f,
-        true
-    );
 }
 
 void AMyGameMode::SaveWorld()
@@ -78,12 +73,18 @@ void AMyGameMode::Load()
 void AMyGameMode::UploadMap()
 {
     UMCGameInstance* GI = Cast<UMCGameInstance>(GetGameInstance());
-    if (GI && !GI->SavedBaseDataPath.IsEmpty())
+    if (!GI || GI->SavedBaseDataPath.IsEmpty()) return;
+    FString ExternalMapPath = GI->SavedBaseDataPath + TEXT("NewMap.umap");
+    FString PackagePath;
+    if (FPaths::FileExists(ExternalMapPath))
     {
-        FString MapFullPath = GI->SavedBaseDataPath + TEXT("NewMap.umap");
-        if (FPaths::FileExists(MapFullPath))
+        if (FPackageName::TryConvertFilenameToLongPackageName(ExternalMapPath, PackagePath))
         {
-            UGameplayStatics::OpenLevel(GetWorld(), FName(*MapFullPath));
+            UE_LOG(LogTemp, Log, TEXT("Caricamento mappa utente: %s"), *PackagePath);
+            UGameplayStatics::OpenLevel(GetWorld(), FName(*PackagePath));
+            return;
         }
     }
+    UE_LOG(LogTemp, Warning, TEXT("Mappa esterna non trovata o non valida. Carico fallback da /Content/NewMap.umap"));
+    UGameplayStatics::OpenLevel(GetWorld(), FName(TEXT("/Game/NewMap")));
 }
