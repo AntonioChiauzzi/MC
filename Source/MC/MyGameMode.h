@@ -6,6 +6,7 @@
 
 class UEntityRegistryDataAsset;
 class UWorldStateManager;
+class UMCGameInstance;
 
 UCLASS(Blueprintable)
 class MC_API AMyGameMode : public AGameMode
@@ -28,6 +29,8 @@ private:
     FTimerHandle SaveTimerHandle;
 
     void SaveWorld();
+
+    void SetupWorldManagerPaths(UMCGameInstance* GI);
 
 protected:
     void Load();

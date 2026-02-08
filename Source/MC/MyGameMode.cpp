@@ -21,29 +21,15 @@ void AMyGameMode::BeginPlay()
     Super::BeginPlay();
     UMCGameInstance* GI = Cast<UMCGameInstance>(GetGameInstance());
     WorldManager = NewObject<UWorldStateManager>(this);
+
     if (GI && WorldManager)
     {
-        if (GI->SavedMapPath.IsEmpty())
-        {
-            WorldManager->OpenDirectoryDialogMap();
-            if (!GI->SavedMapPath.IsEmpty())
-            {
-                WorldManager->UploadMap();
-            }
-            return;
-        }
-        if (GI->SavedBaseDataPath.IsEmpty())
-        {
-            WorldManager->OpenDirectoryDialogJson();
-            if (GI->SavedBaseDataPath.IsEmpty()) return;
-        }
-        UE_LOG(LogTemp, Log, TEXT("Inizializzazione mondo con Mappa: %s e JSON: %s"),
-            *GI->SavedMapPath, *GI->SavedBaseDataPath);
+        SetupWorldManagerPaths(GI);
         WorldManager->BaseDataPath = GI->SavedBaseDataPath;
         WorldManager->EntityRegistryAsset = RegistryConfig;
         WorldManager->Initialize(GetWorld());
-
         Load();
+
         GetWorldTimerManager().SetTimer(
             SaveTimerHandle, 
             this, 
@@ -56,6 +42,21 @@ void AMyGameMode::BeginPlay()
             &AMyGameMode::Load, 
             60.0f, 
             true);
+
+        UE_LOG(LogTemp, Log, TEXT("WorldManager inizializzato con successo."));
+    }
+}
+
+void AMyGameMode::SetupWorldManagerPaths(UMCGameInstance* GI)
+{
+    if (GI->SavedMapPath.IsEmpty())
+    {
+        WorldManager->OpenDirectoryDialogMap();
+        WorldManager->UploadMap();
+    }
+    if (GI->SavedBaseDataPath.IsEmpty())
+    {
+        WorldManager->OpenDirectoryDialogJson();
     }
 }
 

@@ -45,37 +45,27 @@ void UWorldStateManager::Initialize(UWorld* InWorld)
 void UWorldStateManager::LoadEnvironment()
 {
     const FString FilePath = FPaths::Combine(BaseDataPath, TEXT("environment.json"));
-    
+
     FString JsonString;
-    if (!FFileHelper::LoadFileToString(JsonString, *FilePath))
-    {
-        UE_LOG(LogTemp, Error, TEXT("FALLITO: Impossibile trovare environment.json in: %s"), *FilePath);
-        return;
-    }
+    if (!FFileHelper::LoadFileToString(JsonString, *FilePath)) return;
 
     TSharedPtr<FJsonObject> RootJson;
-    TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(JsonString);
-
-    if (!FJsonSerializer::Deserialize(Reader, RootJson) || !RootJson.IsValid())
-    {
-        UE_LOG(LogTemp, Error, TEXT("FALLITO: Parsing fallito per environment.json"));
-        return;
-    }
+    if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(JsonString), RootJson) || !RootJson.IsValid()) return;
 
     TSharedPtr<FJsonObject> EnvJson = RootJson->GetObjectField(TEXT("environment"));
-    if (!EnvJson.IsValid())
+    if (EnvJson.IsValid())
     {
-        UE_LOG(LogTemp, Error, TEXT("FALLITO: Campo 'environment' non trovato nel JSON"));
-        return;
+        UpdateEnvironmentFromJson(EnvJson);
+        UE_LOG(LogTemp, Log, TEXT("Environment loaded correctly from: %s"), *FilePath);
     }
+}
 
-    if (!EnvJson.IsValid()) return;
-
+void UWorldStateManager::UpdateEnvironmentFromJson(const TSharedPtr<FJsonObject>& EnvJson)
+{
     if (!Environment)
     {
         Environment = NewObject<UMyEnvironmentState>(this);
     }
-
     EnvJson->TryGetNumberField(TEXT("soilTemperature"), Environment->SoilTemperature);
     EnvJson->TryGetNumberField(TEXT("soilHumidity"), Environment->SoilHumidity);
     EnvJson->TryGetNumberField(TEXT("soilSolarIrradiance"), Environment->SoilSolarIrradiance);
@@ -93,27 +83,32 @@ void UWorldStateManager::LoadEnvironment()
             Environment->SoilChemicalComposition.Add(Elem.Key, Elem.Value->AsNumber());
         }
     }
-    UE_LOG(LogTemp, Log, TEXT("Environment loaded correctly"));
 }
-
 
 void UWorldStateManager::SaveEnvironment() const
 {
     if (!Environment) return;
-    FString PathToUse;
+    FString PathToUse = BaseDataPath;
     if (UMCGameInstance* GI = Cast<UMCGameInstance>(GetWorld()->GetGameInstance()))
     {
-        PathToUse = GI->SavedBaseDataPath;
+        if (!GI->SavedBaseDataPath.IsEmpty()) PathToUse = GI->SavedBaseDataPath;
     }
-    if (PathToUse.IsEmpty())
+
+    if (PathToUse.IsEmpty()) return;
+    TSharedPtr<FJsonObject> RootJson = MakeShared<FJsonObject>();
+    RootJson->SetObjectField("environment", ConvertEnvironmentToJson());
+    FString OutputString;
+    TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&OutputString);
+    if (FJsonSerializer::Serialize(RootJson.ToSharedRef(), Writer))
     {
-        PathToUse = BaseDataPath;
+        const FString FilePath = FPaths::Combine(PathToUse, TEXT("environment.json"));
+        FFileHelper::SaveStringToFile(OutputString, *FilePath);
+        UE_LOG(LogTemp, Log, TEXT("Environment salvato correttamente in: %s"), *FilePath);
     }
-    if (PathToUse.IsEmpty())
-    {
-        UE_LOG(LogTemp, Error, TEXT("Salvataggio fallito: Nessun percorso base trovato!"));
-        return;
-    }
+}
+
+TSharedPtr<FJsonObject> UWorldStateManager::ConvertEnvironmentToJson() const
+{
     TSharedPtr<FJsonObject> EnvJson = MakeShared<FJsonObject>();
     EnvJson->SetNumberField("airTemperature", Environment->AirTemperature);
     EnvJson->SetNumberField("airHumidity", Environment->AirHumidity);
@@ -129,31 +124,39 @@ void UWorldStateManager::SaveEnvironment() const
         ChemJson->SetNumberField(Elem.Key, Elem.Value);
     }
     EnvJson->SetObjectField("soilChemicalComposition", ChemJson);
-    TSharedPtr<FJsonObject> RootJson = MakeShared<FJsonObject>();
-    RootJson->SetObjectField("environment", EnvJson);
-    FString OutputString;
-    TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&OutputString);
-    if (FJsonSerializer::Serialize(RootJson.ToSharedRef(), Writer))
-    {
-        const FString FilePath = FPaths::Combine(PathToUse, TEXT("environment.json"));
-        if (FFileHelper::SaveStringToFile(OutputString, *FilePath))
-        {
-            UE_LOG(LogTemp, Log, TEXT("Environment salvato correttamente in: %s"), *FilePath);
-        }
-        else
-        {
-            UE_LOG(LogTemp, Error, TEXT("Errore fisico durante il salvataggio del file in: %s"), *FilePath);
-        }
-    }
+    return EnvJson;
 }
 
 void UWorldStateManager::LoadEntities()
 {
+    UpdateLandscapeBounds();
+    const FString FilePath = FPaths::Combine(BaseDataPath, TEXT("entities.json"));
+    FString Json;
+    if (!FFileHelper::LoadFileToString(Json, *FilePath)) return;
+    TSharedPtr<FJsonObject> Root;
+    if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json), Root) || !Root.IsValid()) return;
+    const TArray<TSharedPtr<FJsonValue>>* Arr;
+    if (!Root->TryGetArrayField(TEXT("entities"), Arr)) return;
+    for (const auto& V : *Arr)
+    {
+        auto Obj = V->AsObject();
+        if (!Obj.IsValid()) continue;
+        FString Type = Obj->GetStringField(TEXT("type"));
+        if (!EntityRegistryAsset || !EntityRegistryAsset->EntityMappings.Contains(Type)) continue;
+        if (AActor* NewActor = SpawnEntityFromJson(Obj))
+        {
+            SpawnedEntities.Add(NewActor);
+            if (ResourceManager) ResourceManager->ManagedEntities.Add(NewActor);
+        }
+    }
+}
+
+void UWorldStateManager::UpdateLandscapeBounds()
+{
     FBox TotalBounds(ForceInit);
     for (TActorIterator<ALandscapeProxy> It(World); It; ++It)
     {
-        ALandscapeProxy* LP = *It;
-        if (LP)
+        if (ALandscapeProxy* LP = *It)
         {
             TotalBounds += LP->GetComponentsBoundingBox();
         }
@@ -174,117 +177,57 @@ void UWorldStateManager::LoadEntities()
             break;
         }
     }
-    UE_LOG(LogTemp, Log, TEXT("Confini Landscape Finali: Min %s - Max %s"), *MinBound.ToString(), *MaxBound.ToString());
+    UE_LOG(LogTemp, Log, TEXT("Confini Landscape Aggiornati: Min %s - Max %s"),*MinBound.ToString(), *MaxBound.ToString());
+}
 
-    const FString FilePath = FPaths::Combine(BaseDataPath, TEXT("entities.json"));
-    UE_LOG(LogTemp, Warning, TEXT("Cerco il file in: %s"), *FilePath);
-    FString Json;
-    if (!FFileHelper::LoadFileToString(Json, *FilePath))
+AActor* UWorldStateManager::SpawnEntityFromJson(const TSharedPtr<FJsonObject>& Obj)
+{
+    FString Type = Obj->GetStringField(TEXT("type"));
+    TSubclassOf<AActor> ClassToSpawn = EntityRegistryAsset->EntityMappings[Type].ActorClass;
+    auto LocObj = Obj->GetObjectField(TEXT("location"));
+    FVector Loc(
+        LocObj->GetNumberField(TEXT("x")),
+        LocObj->GetNumberField(TEXT("y")),
+        FMath::Max(0.0f, LocObj->GetNumberField(TEXT("z")))
+    );
+    if (Loc.X < MinBound.X || Loc.X > MaxBound.X || Loc.Y < MinBound.Y || Loc.Y > MaxBound.Y)
     {
-        UE_LOG(LogTemp, Error, TEXT("ERRORE: File entities.json NON TROVATO!"));
-        return;
+        UE_LOG(LogTemp, Warning, TEXT("Entità %s fuori Landscape!"), *Type);
+        return nullptr;
     }
-
-    TSharedPtr<FJsonObject> Root;
-    if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json), Root) || !Root.IsValid())
+    AActor* A = World->SpawnActor<AActor>(ClassToSpawn, Loc, FRotator::ZeroRotator);
+    if (!A) return nullptr;
+    if (AMyBaseActor* MyBaseActor = Cast<AMyBaseActor>(A))
     {
-        UE_LOG(LogTemp, Error, TEXT("ERRORE: JSON corrotto o malformato!"));
-        return;
-    }
-
-    const TArray<TSharedPtr<FJsonValue>>* Arr;
-    if (!Root->TryGetArrayField(TEXT("entities"), Arr)) return;
-
-    for (const auto& V : *Arr)
-    {
-        auto Obj = V->AsObject();
-        if (!Obj.IsValid()) continue;
-
-        FString Type = Obj->GetStringField(TEXT("type"));
-
-        if (!EntityRegistryAsset || !EntityRegistryAsset->EntityMappings.Contains(Type))
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Tipo %s non trovato nel Data Asset"), *Type);
-            continue;
-        }
-
-        TSubclassOf<AActor> ClassToSpawn = EntityRegistryAsset->EntityMappings[Type].ActorClass;
-
-        auto LocObj = Obj->GetObjectField(TEXT("location"));
-        FVector Loc(
-            LocObj->GetNumberField(TEXT("x")),
-            LocObj->GetNumberField(TEXT("y")),
-            FMath::Max(0.0f, LocObj->GetNumberField(TEXT("z"))) 
-        );
-
-        if (Loc.X < MinBound.X || Loc.X > MaxBound.X || Loc.Y < MinBound.Y || Loc.Y > MaxBound.Y)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Entità %s fuori Landscape! Loc: %s | Limiti: Min(%f, %f) Max(%f, %f)"),*Type, *Loc.ToString(), MinBound.X, MinBound.Y, MaxBound.X, MaxBound.Y);
-            continue;
-        }
-
-        AActor* A = World->SpawnActor<AActor>(ClassToSpawn, Loc, FRotator::ZeroRotator);
-        if (!A) continue;
-
-        if (AMyBaseActor* MyBaseActor = Cast<AMyBaseActor>(A))
-        {
-            MyBaseActor->ID = Obj->GetStringField(TEXT("id"));
-            FString NameField;
-            if (Obj->TryGetStringField(TEXT("name"), NameField)) {
-                MyBaseActor->Name = NameField;
-            }
-            else {
-                MyBaseActor->Name = MyBaseActor->ID;
-            }
-            MyBaseActor->MapMin = MinBound;
-            MyBaseActor->MapMax = MaxBound;
+        MyBaseActor->ID = Obj->GetStringField(TEXT("id"));
+        MyBaseActor->Name = Obj->HasField(TEXT("name")) ? Obj->GetStringField(TEXT("name")) : MyBaseActor->ID;
+        MyBaseActor->MapMin = MinBound;
+        MyBaseActor->MapMax = MaxBound;
 
 #if WITH_EDITOR
-            A->SetActorLabel(MyBaseActor->Name);
+        A->SetActorLabel(MyBaseActor->Name);
 #endif
-        }
+    }
 
-        const TSharedPtr<FJsonObject>* TargetObjPtr;
-        if (Obj->TryGetObjectField(TEXT("targetLocation"), TargetObjPtr))
+    const TSharedPtr<FJsonObject>* TargetObjPtr;
+    if (Obj->TryGetObjectField(TEXT("targetLocation"), TargetObjPtr))
+    {
+        auto TargetObj = *TargetObjPtr;
+        FVector TLoc(TargetObj->GetNumberField(TEXT("x")), TargetObj->GetNumberField(TEXT("y")), TargetObj->GetNumberField(TEXT("z")));
+        if (IMovableVehicle* Movable = Cast<IMovableVehicle>(A))
         {
-            auto TargetObj = *TargetObjPtr;
-            FVector TLoc(
-                TargetObj->GetNumberField(TEXT("x")),
-                TargetObj->GetNumberField(TEXT("y")),
-                TargetObj->GetNumberField(TEXT("z"))
-            );
-            if (TLoc.X >= MinBound.X && TLoc.X <= MaxBound.X && TLoc.Y >= MinBound.Y && TLoc.Y <= MaxBound.Y)
-            {
-                if (IMovableVehicle* Movable = Cast<IMovableVehicle>(A))
-                {
-                    Movable->SetTargetLocation(TLoc);
-                }
-            }
-        }
-
-        if (A->GetClass()->ImplementsInterface(UEntityConfigurable::StaticClass()))
-            if (IEntityConfigurable* Configurable = Cast<IEntityConfigurable>(A))
-            {
-                Configurable->ConfigureFromJson(Obj);
-            }
-
-        if (A->Implements<UEnvironmentInjectable>())
-        {
-            IEnvironmentInjectable::Execute_SetEnvironment(A, Environment);
-        }
-
-        if (A->Implements<UEnvironmentReader>())
-        {
-            IEnvironmentReader::Execute_ReadEnvironment(A, Environment);
-        }
-
-        SpawnedEntities.Add(A);
-
-        if (ResourceManager)
-        {
-            ResourceManager->ManagedEntities.Add(A);
+            Movable->SetTargetLocation(TLoc);
         }
     }
+    if (IEntityConfigurable* Configurable = Cast<IEntityConfigurable>(A))
+    {
+        Configurable->ConfigureFromJson(Obj);
+    }
+    if (A->Implements<UEnvironmentInjectable>())
+        IEnvironmentInjectable::Execute_SetEnvironment(A, Environment);
+    if (A->Implements<UEnvironmentReader>())
+        IEnvironmentReader::Execute_ReadEnvironment(A, Environment);
+    return A;
 }
 
 void UWorldStateManager::RemoveOldInstances()
@@ -310,66 +253,20 @@ void UWorldStateManager::RemoveOldInstances()
 void UWorldStateManager::SaveEntities()
 {
     if (!World) return;
-    FString PathToUse;
+    FString PathToUse = BaseDataPath;
     if (UMCGameInstance* GI = Cast<UMCGameInstance>(World->GetGameInstance()))
     {
-        PathToUse = GI->SavedBaseDataPath;
+        if (!GI->SavedBaseDataPath.IsEmpty()) PathToUse = GI->SavedBaseDataPath;
     }
-    if (PathToUse.IsEmpty())
-    {
-        PathToUse = BaseDataPath; 
-    }
-    if (PathToUse.IsEmpty())
-    {
-        UE_LOG(LogTemp, Error, TEXT("Salvataggio Entità fallito: Percorso non valido!"));
-        return;
-    }
+    if (PathToUse.IsEmpty()) return;
     TSharedPtr<FJsonObject> RootObject = MakeShared<FJsonObject>();
     TArray<TSharedPtr<FJsonValue>> EntitiesArray;
     for (TActorIterator<AMyBaseActor> It(World); It; ++It)
     {
-        AMyBaseActor* MyBaseActor = *It;
-        if (!MyBaseActor) continue;
-        TSharedPtr<FJsonObject> EntityObj = MakeShared<FJsonObject>();
-        EntityObj->SetStringField(TEXT("id"), MyBaseActor->ID);
-        EntityObj->SetStringField(TEXT("type"), MyBaseActor->GetEntityType());
-        FVector L = MyBaseActor->GetActorLocation();
-        TSharedPtr<FJsonObject> Loc = MakeShared<FJsonObject>();
-        Loc->SetNumberField(TEXT("x"), L.X);
-        Loc->SetNumberField(TEXT("y"), L.Y);
-        Loc->SetNumberField(TEXT("z"), FMath::Max(0.0f, L.Z));
-        EntityObj->SetObjectField(TEXT("location"), Loc);
-        TSharedPtr<FJsonObject> Params = MakeShared<FJsonObject>();
-        if (MyBaseActor->Implements<UEntityConfigurable>())
+        if (AMyBaseActor* MyBaseActor = *It)
         {
-            if (IEntityConfigurable* Configurable = Cast<IEntityConfigurable>(MyBaseActor))
-            {
-                Configurable->SaveToJson(Params);
-            }
-            if (Params->Values.Num() > 0)
-            {
-                EntityObj->SetObjectField(TEXT("params"), Params);
-            }
+            EntitiesArray.Add(MakeShared<FJsonValueObject>(ConvertEntityToJson(MyBaseActor)));
         }
-        TOptional<FVector> CurrentTarget;
-        if (ATractorPawn* Tractor = Cast<ATractorPawn>(MyBaseActor)) {
-            CurrentTarget = Tractor->TargetLocation;
-        }
-        else if (ADronePawn* Drone = Cast<ADronePawn>(MyBaseActor)) {
-            CurrentTarget = Drone->TargetLocation;
-        }
-        else if (AHarvesterPawn* Harvester = Cast<AHarvesterPawn>(MyBaseActor)) {
-            CurrentTarget = Harvester->TargetLocation;
-        }
-        if (CurrentTarget.IsSet())
-        {
-            TSharedPtr<FJsonObject> TObj = MakeShared<FJsonObject>();
-            TObj->SetNumberField(TEXT("x"), CurrentTarget.GetValue().X);
-            TObj->SetNumberField(TEXT("y"), CurrentTarget.GetValue().Y);
-            TObj->SetNumberField(TEXT("z"), CurrentTarget.GetValue().Z);
-            Params->SetObjectField(TEXT("targetLocation"), TObj);
-        }
-        EntitiesArray.Add(MakeShared<FJsonValueObject>(EntityObj));
     }
     RootObject->SetArrayField(TEXT("entities"), EntitiesArray);
     FString Output;
@@ -377,15 +274,44 @@ void UWorldStateManager::SaveEntities()
     if (FJsonSerializer::Serialize(RootObject.ToSharedRef(), Writer))
     {
         const FString FilePath = FPaths::Combine(PathToUse, TEXT("entities.json"));
-        if (FFileHelper::SaveStringToFile(Output, *FilePath))
-        {
-            UE_LOG(LogTemp, Log, TEXT("Entità salvate con successo in: %s"), *FilePath);
-        }
-        else
-        {
-            UE_LOG(LogTemp, Error, TEXT("Errore durante la scrittura del file entities.json!"));
-        }
+        FFileHelper::SaveStringToFile(Output, *FilePath);
+        UE_LOG(LogTemp, Log, TEXT("Entità salvate in: %s"), *FilePath);
     }
+}
+
+TSharedPtr<FJsonObject> UWorldStateManager::ConvertEntityToJson(AMyBaseActor* Actor)
+{
+    TSharedPtr<FJsonObject> EntityObj = MakeShared<FJsonObject>();
+    EntityObj->SetStringField(TEXT("id"), Actor->ID);
+    EntityObj->SetStringField(TEXT("type"), Actor->GetEntityType());
+    FVector L = Actor->GetActorLocation();
+    TSharedPtr<FJsonObject> Loc = MakeShared<FJsonObject>();
+    Loc->SetNumberField(TEXT("x"), L.X);
+    Loc->SetNumberField(TEXT("y"), L.Y);
+    Loc->SetNumberField(TEXT("z"), FMath::Max(0.0f, L.Z));
+    EntityObj->SetObjectField(TEXT("location"), Loc);
+    TSharedPtr<FJsonObject> Params = MakeShared<FJsonObject>();
+    if (IEntityConfigurable* Configurable = Cast<IEntityConfigurable>(Actor))
+    {
+        Configurable->SaveToJson(Params);
+    }
+    TOptional<FVector> CurrentTarget;
+    if (ATractorPawn* Tractor = Cast<ATractorPawn>(Actor)) CurrentTarget = Tractor->TargetLocation;
+    else if (ADronePawn* Drone = Cast<ADronePawn>(Actor)) CurrentTarget = Drone->TargetLocation;
+    else if (AHarvesterPawn* Harvester = Cast<AHarvesterPawn>(Actor)) CurrentTarget = Harvester->TargetLocation;
+    if (CurrentTarget.IsSet())
+    {
+        TSharedPtr<FJsonObject> TObj = MakeShared<FJsonObject>();
+        TObj->SetNumberField(TEXT("x"), CurrentTarget.GetValue().X);
+        TObj->SetNumberField(TEXT("y"), CurrentTarget.GetValue().Y);
+        TObj->SetNumberField(TEXT("z"), CurrentTarget.GetValue().Z);
+        Params->SetObjectField(TEXT("targetLocation"), TObj);
+    }
+    if (Params->Values.Num() > 0)
+    {
+        EntityObj->SetObjectField(TEXT("params"), Params);
+    }
+    return EntityObj;
 }
 
 void UWorldStateManager::UploadMap()

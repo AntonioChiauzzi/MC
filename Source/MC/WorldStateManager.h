@@ -10,7 +10,8 @@ class UResourceManager;
 class AActor;
 class UWorld;
 class ALandscapeProxy;
-class ALandscape;
+class ALandscape; 
+class AMyBaseActor;
 
 UCLASS()
 class MC_API UWorldStateManager : public UObject
@@ -51,4 +52,15 @@ private:
 
     UPROPERTY(VisibleAnywhere, Category = "Map Bounds")
     FVector MaxBound;
+
+protected:
+    void UpdateLandscapeBounds();
+
+    AActor* SpawnEntityFromJson(const TSharedPtr<FJsonObject>& Obj);
+
+    TSharedPtr<FJsonObject> ConvertEntityToJson(AMyBaseActor* Actor);
+
+    void UpdateEnvironmentFromJson(const TSharedPtr<FJsonObject>& EnvJson);
+
+    TSharedPtr<FJsonObject> ConvertEnvironmentToJson() const;
 };
