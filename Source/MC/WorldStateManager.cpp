@@ -1,25 +1,30 @@
 #include "WorldStateManager.h"
 
-#include "Json.h"
-#include "JsonUtilities.h"
-#include "Misc/FileHelper.h"
-#include "Misc/Paths.h"
-#include "Developer/DesktopPlatform/Public/IDesktopPlatform.h"
-#include "Developer/DesktopPlatform/Public/DesktopPlatformModule.h"
-#include "Framework/Application/SlateApplication.h"
-#include <Editor/MainFrame/Private/MainFrameModule.h>
-#include "EngineUtils.h"
+#include "MCGameInstance.h"
+#include "MyEnvironmentState.h"
+#include "EntityRegistryDataAsset.h"
+#include "ResourceManager.h"
 #include "TractorPawn.h"
 #include "DronePawn.h"
 #include "HarvesterPawn.h"
 #include "GroundSensorActor.h"
 #include "WeatherStationActor.h"
 #include "EntityConfigurable.h"
-#include "Landscape.h"
-#include "LandscapeProxy.h"
 #include "MovableVehicle.h"
 #include "MyBaseActor.h"
-#include "MCGameInstance.h"
+
+#include "Json.h"
+#include "JsonUtilities.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+#include "HAL/FileManager.h"
+#include "Kismet/GameplayStatics.h"
+#include "EngineUtils.h"
+#include "Landscape.h"      
+#include "LandscapeProxy.h"
+
+#include "Developer/DesktopPlatform/Public/IDesktopPlatform.h"
+#include "Developer/DesktopPlatform/Public/DesktopPlatformModule.h" 
 
 
 
@@ -39,17 +44,31 @@ void UWorldStateManager::Initialize(UWorld* InWorld)
 
 void UWorldStateManager::LoadEnvironment()
 {
+    const FString FilePath = FPaths::Combine(BaseDataPath, TEXT("environment.json"));
+    
     FString JsonString;
-    const FString FilePath = BaseDataPath + TEXT("environment.json");
-
-    if (!FFileHelper::LoadFileToString(JsonString, *FilePath)) return;
+    if (!FFileHelper::LoadFileToString(JsonString, *FilePath))
+    {
+        UE_LOG(LogTemp, Error, TEXT("FALLITO: Impossibile trovare environment.json in: %s"), *FilePath);
+        return;
+    }
 
     TSharedPtr<FJsonObject> RootJson;
     TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(JsonString);
 
-    if (!FJsonSerializer::Deserialize(Reader, RootJson) || !RootJson.IsValid()) return;
+    if (!FJsonSerializer::Deserialize(Reader, RootJson) || !RootJson.IsValid())
+    {
+        UE_LOG(LogTemp, Error, TEXT("FALLITO: Parsing fallito per environment.json"));
+        return;
+    }
 
     TSharedPtr<FJsonObject> EnvJson = RootJson->GetObjectField(TEXT("environment"));
+    if (!EnvJson.IsValid())
+    {
+        UE_LOG(LogTemp, Error, TEXT("FALLITO: Campo 'environment' non trovato nel JSON"));
+        return;
+    }
+
     if (!EnvJson.IsValid()) return;
 
     if (!Environment)
@@ -65,7 +84,6 @@ void UWorldStateManager::LoadEnvironment()
     EnvJson->TryGetNumberField(TEXT("windSpeed"), Environment->WindSpeed);
     EnvJson->TryGetNumberField(TEXT("airTemperature"), Environment->AirTemperature);
     EnvJson->TryGetNumberField(TEXT("airHumidity"), Environment->AirHumidity);
-
     Environment->SoilChemicalComposition.Empty();
     const TSharedPtr<FJsonObject>* ChemJson;
     if (EnvJson->TryGetObjectField(TEXT("soilChemicalComposition"), ChemJson))
@@ -75,7 +93,6 @@ void UWorldStateManager::LoadEnvironment()
             Environment->SoilChemicalComposition.Add(Elem.Key, Elem.Value->AsNumber());
         }
     }
-
     UE_LOG(LogTemp, Log, TEXT("Environment loaded correctly"));
 }
 
@@ -83,45 +100,52 @@ void UWorldStateManager::LoadEnvironment()
 void UWorldStateManager::SaveEnvironment() const
 {
     if (!Environment) return;
-
+    FString PathToUse;
+    if (UMCGameInstance* GI = Cast<UMCGameInstance>(GetWorld()->GetGameInstance()))
+    {
+        PathToUse = GI->SavedBaseDataPath;
+    }
+    if (PathToUse.IsEmpty())
+    {
+        PathToUse = BaseDataPath;
+    }
+    if (PathToUse.IsEmpty())
+    {
+        UE_LOG(LogTemp, Error, TEXT("Salvataggio fallito: Nessun percorso base trovato!"));
+        return;
+    }
     TSharedPtr<FJsonObject> EnvJson = MakeShared<FJsonObject>();
-
     EnvJson->SetNumberField("airTemperature", Environment->AirTemperature);
     EnvJson->SetNumberField("airHumidity", Environment->AirHumidity);
     EnvJson->SetNumberField("windSpeed", Environment->WindSpeed);
-
     EnvJson->SetNumberField("soilTemperature", Environment->SoilTemperature);
     EnvJson->SetNumberField("soilHumidity", Environment->SoilHumidity);
-    EnvJson->SetNumberField("soilSolarIrradiance",
-                            Environment->SoilSolarIrradiance);
+    EnvJson->SetNumberField("soilSolarIrradiance", Environment->SoilSolarIrradiance);
     EnvJson->SetNumberField("soilpH", Environment->SoilpH);
     EnvJson->SetNumberField("cropMaturity", Environment->cropMaturity);
-
     TSharedPtr<FJsonObject> ChemJson = MakeShared<FJsonObject>();
     for (const auto& Elem : Environment->SoilChemicalComposition)
     {
         ChemJson->SetNumberField(Elem.Key, Elem.Value);
     }
-
     EnvJson->SetObjectField("soilChemicalComposition", ChemJson);
-
     TSharedPtr<FJsonObject> RootJson = MakeShared<FJsonObject>();
     RootJson->SetObjectField("environment", EnvJson);
-
     FString OutputString;
-    TSharedRef<TJsonWriter<>> Writer =
-        TJsonWriterFactory<>::Create(&OutputString);
-
-    FJsonSerializer::Serialize(RootJson.ToSharedRef(), Writer);
-
-    const FString FilePath =
-        FPaths::ProjectContentDir() + TEXT("Data/environment.json");
-
-    FFileHelper::SaveStringToFile(OutputString, *FilePath);
-
-    UE_LOG(LogTemp, Log, TEXT("Environment saved"));
+    TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&OutputString);
+    if (FJsonSerializer::Serialize(RootJson.ToSharedRef(), Writer))
+    {
+        const FString FilePath = FPaths::Combine(PathToUse, TEXT("environment.json"));
+        if (FFileHelper::SaveStringToFile(OutputString, *FilePath))
+        {
+            UE_LOG(LogTemp, Log, TEXT("Environment salvato correttamente in: %s"), *FilePath);
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("Errore fisico durante il salvataggio del file in: %s"), *FilePath);
+        }
+    }
 }
-
 
 void UWorldStateManager::LoadEntities()
 {
@@ -152,12 +176,21 @@ void UWorldStateManager::LoadEntities()
     }
     UE_LOG(LogTemp, Log, TEXT("Confini Landscape Finali: Min %s - Max %s"), *MinBound.ToString(), *MaxBound.ToString());
 
+    const FString FilePath = FPaths::Combine(BaseDataPath, TEXT("entities.json"));
+    UE_LOG(LogTemp, Warning, TEXT("Cerco il file in: %s"), *FilePath);
     FString Json;
-    const FString FilePath = BaseDataPath + TEXT("entities.json");
-    if (!FFileHelper::LoadFileToString(Json, *FilePath)) return;
+    if (!FFileHelper::LoadFileToString(Json, *FilePath))
+    {
+        UE_LOG(LogTemp, Error, TEXT("ERRORE: File entities.json NON TROVATO!"));
+        return;
+    }
 
     TSharedPtr<FJsonObject> Root;
-    if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json), Root) || !Root.IsValid()) return;
+    if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json), Root) || !Root.IsValid())
+    {
+        UE_LOG(LogTemp, Error, TEXT("ERRORE: JSON corrotto o malformato!"));
+        return;
+    }
 
     const TArray<TSharedPtr<FJsonValue>>* Arr;
     if (!Root->TryGetArrayField(TEXT("entities"), Arr)) return;
@@ -276,44 +309,48 @@ void UWorldStateManager::RemoveOldInstances()
 
 void UWorldStateManager::SaveEntities()
 {
+    if (!World) return;
+    FString PathToUse;
+    if (UMCGameInstance* GI = Cast<UMCGameInstance>(World->GetGameInstance()))
+    {
+        PathToUse = GI->SavedBaseDataPath;
+    }
+    if (PathToUse.IsEmpty())
+    {
+        PathToUse = BaseDataPath; 
+    }
+    if (PathToUse.IsEmpty())
+    {
+        UE_LOG(LogTemp, Error, TEXT("Salvataggio Entità fallito: Percorso non valido!"));
+        return;
+    }
     TSharedPtr<FJsonObject> RootObject = MakeShared<FJsonObject>();
     TArray<TSharedPtr<FJsonValue>> EntitiesArray;
-
-    if (!World) return;
-
     for (TActorIterator<AMyBaseActor> It(World); It; ++It)
     {
         AMyBaseActor* MyBaseActor = *It;
         if (!MyBaseActor) continue;
-
         TSharedPtr<FJsonObject> EntityObj = MakeShared<FJsonObject>();
-
         EntityObj->SetStringField(TEXT("id"), MyBaseActor->ID);
         EntityObj->SetStringField(TEXT("type"), MyBaseActor->GetEntityType());
-
         FVector L = MyBaseActor->GetActorLocation();
-
         TSharedPtr<FJsonObject> Loc = MakeShared<FJsonObject>();
-
         Loc->SetNumberField(TEXT("x"), L.X);
         Loc->SetNumberField(TEXT("y"), L.Y);
         Loc->SetNumberField(TEXT("z"), FMath::Max(0.0f, L.Z));
         EntityObj->SetObjectField(TEXT("location"), Loc);
-
         TSharedPtr<FJsonObject> Params = MakeShared<FJsonObject>();
         if (MyBaseActor->Implements<UEntityConfigurable>())
         {
-            if (MyBaseActor->GetClass()->ImplementsInterface(UEntityConfigurable::StaticClass()))
-                if (IEntityConfigurable* Configurable = Cast<IEntityConfigurable>(MyBaseActor))
-                {
-                    Configurable->SaveToJson(Params);
-                }
+            if (IEntityConfigurable* Configurable = Cast<IEntityConfigurable>(MyBaseActor))
+            {
+                Configurable->SaveToJson(Params);
+            }
             if (Params->Values.Num() > 0)
             {
                 EntityObj->SetObjectField(TEXT("params"), Params);
             }
         }
-
         TOptional<FVector> CurrentTarget;
         if (ATractorPawn* Tractor = Cast<ATractorPawn>(MyBaseActor)) {
             CurrentTarget = Tractor->TargetLocation;
@@ -334,38 +371,93 @@ void UWorldStateManager::SaveEntities()
         }
         EntitiesArray.Add(MakeShared<FJsonValueObject>(EntityObj));
     }
-
     RootObject->SetArrayField(TEXT("entities"), EntitiesArray);
-
     FString Output;
     TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&Output);
     if (FJsonSerializer::Serialize(RootObject.ToSharedRef(), Writer))
     {
-        FString FilePath = BaseDataPath + TEXT("entities.json");
-        FFileHelper::SaveStringToFile(Output, *FilePath);
+        const FString FilePath = FPaths::Combine(PathToUse, TEXT("entities.json"));
+        if (FFileHelper::SaveStringToFile(Output, *FilePath))
+        {
+            UE_LOG(LogTemp, Log, TEXT("Entità salvate con successo in: %s"), *FilePath);
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("Errore durante la scrittura del file entities.json!"));
+        }
     }
 }
 
-void UWorldStateManager::OpenDirectoryDialog()
+void UWorldStateManager::UploadMap()
+{
+    UMCGameInstance* GI = Cast<UMCGameInstance>(GetWorld()->GetGameInstance());
+    if (!GI || GI->SavedMapPath.IsEmpty()) return;
+    FString SelectedDirectory = GI->SavedMapPath;
+    TArray<FString> FoundFiles;
+    IFileManager::Get().FindFiles(FoundFiles, *SelectedDirectory, TEXT("*.umap"));
+    if (FoundFiles.Num() > 0)
+    {
+        FString MapName = FPaths::GetBaseFilename(FoundFiles[0]);
+        FPackageName::RegisterMountPoint(TEXT("/Game/"), SelectedDirectory);
+        FString PackagePath = TEXT("/Game/") / MapName;
+        UE_LOG(LogTemp, Warning, TEXT("Caricamento da path esterno scelto: %s"), *PackagePath);
+        UGameplayStatics::OpenLevel(GetWorld(), FName(*PackagePath));
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("Nessun file .umap trovato in: %s"), *SelectedDirectory);
+    }
+}
+
+void UWorldStateManager::OpenDirectoryDialogJson()
 {
     IDesktopPlatform* DesktopPlatform = FDesktopPlatformModule::Get();
     FString SelectedDirectory;
     if (DesktopPlatform)
     {
-        DesktopPlatform->OpenDirectoryDialog(
+        bool bOpened = DesktopPlatform->OpenDirectoryDialog(
             nullptr,
-            TEXT("Seleziona la cartella contenente NewMap.umap e i JSON"),
+            TEXT("Seleziona la cartella dei JSON (Annulla per usare Content/Data)"),
             FPaths::ProjectContentDir(),
             SelectedDirectory
         );
+        if (!bOpened || SelectedDirectory.IsEmpty())
+        {
+            SelectedDirectory = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Data"));
+            UE_LOG(LogTemp, Warning, TEXT("Dialog JSON annullato. Uso fallback: %s"), *SelectedDirectory);
+        }
     }
-    if (SelectedDirectory.IsEmpty())
-    {
-        SelectedDirectory = FPaths::ProjectContentDir() + TEXT("Data");
-    }
-    BaseDataPath = FPaths::Combine(SelectedDirectory, TEXT("/"));
     if (UMCGameInstance* GI = Cast<UMCGameInstance>(GetWorld()->GetGameInstance()))
     {
-        GI->SavedBaseDataPath = BaseDataPath;
+        FPaths::NormalizeDirectoryName(SelectedDirectory);
+        GI->SavedBaseDataPath = SelectedDirectory;
+        BaseDataPath = SelectedDirectory;
+        UE_LOG(LogTemp, Log, TEXT("SavedBaseDataPath impostato a: %s"), *GI->SavedBaseDataPath);
+    }
+}
+
+void UWorldStateManager::OpenDirectoryDialogMap()
+{
+    IDesktopPlatform* DesktopPlatform = FDesktopPlatformModule::Get();
+    FString SelectedDirectory;
+    if (DesktopPlatform)
+    {
+        bool bOpened = DesktopPlatform->OpenDirectoryDialog(
+            nullptr,
+            TEXT("Seleziona la cartella contenente la Mappa (Annulla per caricare NewMap di default)"),
+            FPaths::ProjectContentDir(),
+            SelectedDirectory
+        );
+        if (!bOpened || SelectedDirectory.IsEmpty())
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Dialog annullato. Utilizzo percorso di default: Content/"));
+            SelectedDirectory = FPaths::ProjectContentDir();
+        }
+    }
+    if (UMCGameInstance* GI = Cast<UMCGameInstance>(GetWorld()->GetGameInstance()))
+    {
+        FPaths::NormalizeDirectoryName(SelectedDirectory);
+        GI->SavedMapPath = SelectedDirectory;
+        UE_LOG(LogTemp, Log, TEXT("SavedMapPath impostato a: %s"), *GI->SavedMapPath);
     }
 }

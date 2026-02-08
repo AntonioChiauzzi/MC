@@ -9,20 +9,25 @@ public class MC : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
         CppCompileWarningSettings.UndefinedIdentifierWarningLevel = WarningLevel.Warning;
 
-        PublicDependencyModuleNames.AddRange(new string[] { "Core", 
-		"CoreUObject", 
-		"Engine", 
-		"InputCore", 
-		"EnhancedInput",
-		"Json",
-		"JsonUtilities",
-		"Landscape",
-		"DesktopPlatform",
-        "MainFrame",
-		"Slate",     
-		"SlateCore"});
+        PublicDependencyModuleNames.AddRange(new string[] {
+            "Core",
+            "CoreUObject",
+            "Engine",
+            "InputCore",
+            "EnhancedInput",
+            "Landscape" 
+        });
 
-		PrivateDependencyModuleNames.AddRange(new string[] {  });
+        PrivateDependencyModuleNames.AddRange(new string[] {
+            "Json",
+            "JsonUtilities",
+            "DesktopPlatform",
+            "AssetRegistry",   
+            "Slate",
+            "SlateCore"
+        });
+
+        PrivateDependencyModuleNames.AddRange(new string[] {  });
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });

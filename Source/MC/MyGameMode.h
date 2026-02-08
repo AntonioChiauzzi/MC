@@ -2,10 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameMode.h"
-#include "WorldStateManager.h"
 #include "MyGameMode.generated.h"
 
 class UEntityRegistryDataAsset;
+class UWorldStateManager;
 
 UCLASS(Blueprintable)
 class MC_API AMyGameMode : public AGameMode
@@ -28,8 +28,6 @@ private:
     FTimerHandle SaveTimerHandle;
 
     void SaveWorld();
-
-    void UploadMap();
 
 protected:
     void Load();

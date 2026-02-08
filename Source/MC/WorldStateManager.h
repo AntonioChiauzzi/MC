@@ -2,12 +2,15 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "MyEnvironmentState.h"
-#include "EntityRegistryDataAsset.h"
-#include "ResourceManager.h"
 #include "WorldStateManager.generated.h"
 
 class UEntityRegistryDataAsset;
+class UMyEnvironmentState;
+class UResourceManager;
+class AActor;
+class UWorld;
+class ALandscapeProxy;
+class ALandscape;
 
 UCLASS()
 class MC_API UWorldStateManager : public UObject
@@ -15,23 +18,18 @@ class MC_API UWorldStateManager : public UObject
     GENERATED_BODY()
 
 public:
-
     void Initialize(UWorld* InWorld);
-
     void LoadEnvironment();
     void SaveEnvironment() const;
-
-    UMyEnvironmentState* GetEnvironment() const;
-
     void LoadEntities();
     void SaveEntities();
+    void UploadMap();
+    void OpenDirectoryDialogJson();
+    void OpenDirectoryDialogMap();
+    void RemoveOldInstances();
 
     UPROPERTY(EditAnywhere)
     FString BaseDataPath;
-
-    void OpenDirectoryDialog();
-
-    void RemoveOldInstances();
 
     UPROPERTY(EditAnywhere, Category = "Registry")
     UEntityRegistryDataAsset* EntityRegistryAsset;
@@ -46,13 +44,11 @@ private:
     UMyEnvironmentState* Environment;
 
     UPROPERTY()
-    class UResourceManager* ResourceManager;
+    UResourceManager* ResourceManager;
 
     UPROPERTY(VisibleAnywhere, Category = "Map Bounds")
     FVector MinBound;
 
     UPROPERTY(VisibleAnywhere, Category = "Map Bounds")
     FVector MaxBound;
-
 };
-

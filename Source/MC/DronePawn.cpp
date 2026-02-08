@@ -119,7 +119,7 @@ void ADronePawn::SaveToJson(const TSharedPtr<FJsonObject>& Json)
 void ADronePawn::SetEnvironment_Implementation(UMyEnvironmentState* InEnvironment)
 {
     Environment = InEnvironment;
-    UE_LOG(LogTemp, Log, TEXT("Drone received environment"));
+    //UE_LOG(LogTemp, Log, TEXT("Drone received environment"));
 }
 
 void ADronePawn::ReadValueFromSoil()

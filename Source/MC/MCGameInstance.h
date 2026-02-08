@@ -11,4 +11,7 @@ class MC_API UMCGameInstance : public UGameInstance
 public:
     UPROPERTY(BlueprintReadWrite)
     FString SavedBaseDataPath;
+
+    UPROPERTY(BlueprintReadWrite)
+    FString SavedMapPath;
 };
