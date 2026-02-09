@@ -1,11 +1,12 @@
 #include "DronePawn.h"
+#include "MyEnvironmentState.h"
+#include "Components/StaticMeshComponent.h"
 
 ADronePawn::ADronePawn()
 {
     PrimaryActorTick.bCanEverTick = true;
     Velocity = FVector::ZeroVector;
 }
-
 
 void ADronePawn::BeginPlay()
 {
@@ -16,20 +17,20 @@ void ADronePawn::BeginPlay()
 void ADronePawn::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-    if (BatteryLevel > 0.0f)
+    if (BatteryLevel > 0.0f && !Velocity.IsNearlyZero())
     {
         if (TargetLocation.IsSet())
         {
             MoveToTarget(DeltaTime, TargetLocation.GetValue());
         }
-        else if (!Velocity.IsNearlyZero())
+        else
         {
             Move(DeltaTime);
         }
         BatteryLevel = FMath::Max(0.0f, BatteryLevel - (BatteryConsumptionRate * DeltaTime));
         ReadValueFromSoil();
     }
-    else
+    else if (BatteryLevel <= 0.0f)
     {
         Velocity = FVector::ZeroVector;
     }
@@ -53,8 +54,7 @@ void ADronePawn::Move(float DeltaTime)
 void ADronePawn::MoveToTarget(float DeltaTime, FVector Target)
 {
     FVector CurrentLoc = GetActorLocation();
-    float Speed = Velocity.Size();
-    if (Speed <= 0.0f) Speed = 400.0f;
+    float Speed = Velocity.Size() > 0.0f ? Velocity.Size() : 400.0f;
     float Distance = FVector::Dist(CurrentLoc, Target);
     if (Distance < FMath::Max(15.0f, Speed * DeltaTime))
     {
@@ -86,7 +86,6 @@ void ADronePawn::ConfigureFromJson(const TSharedPtr<FJsonObject>& Json)
 {
     const TSharedPtr<FJsonObject>* Params;
     if (!Json->TryGetObjectField(TEXT("params"), Params)) return;
-
     const TSharedPtr<FJsonObject>* SpeedObj;
     if ((*Params)->TryGetObjectField(TEXT("speed"), SpeedObj))
     {
@@ -100,51 +99,40 @@ void ADronePawn::ConfigureFromJson(const TSharedPtr<FJsonObject>& Json)
     }
 }
 
-FString ADronePawn::GetEntityType() const 
-{ 
-    return TEXT("Drone"); 
-}
-
 void ADronePawn::SaveToJson(const TSharedPtr<FJsonObject>& Json)
 {
     TSharedPtr<FJsonObject> SpeedObj = MakeShared<FJsonObject>();
     SpeedObj->SetNumberField(TEXT("x"), Velocity.X);
     SpeedObj->SetNumberField(TEXT("y"), Velocity.Y);
     SpeedObj->SetNumberField(TEXT("z"), Velocity.Z);
-
     Json->SetObjectField(TEXT("speed"), SpeedObj);
     Json->SetNumberField(TEXT("battery"), BatteryLevel);
 }
 
+FString ADronePawn::GetEntityType() const { return TEXT("Drone"); }
+
 void ADronePawn::SetEnvironment_Implementation(UMyEnvironmentState* InEnvironment)
 {
     Environment = InEnvironment;
-    //UE_LOG(LogTemp, Log, TEXT("Drone received environment"));
 }
 
 void ADronePawn::ReadValueFromSoil()
 {
-    if (!IsValid(Environment)) return;
-
-    UE_LOG(LogTemp, Log, TEXT("--- Ground Sensor Readings ---"));
-    UE_LOG(LogTemp, Log, TEXT("Crop Maturity: %f"), Environment->cropMaturity);
+    if (IsValid(Environment))
+    {
+        UE_LOG(LogTemp, Log, TEXT("Drone Scan - Crop Maturity: %f"), Environment->cropMaturity);
+    }
 }
 
 void ADronePawn::ApplyAutoScalingToMesh()
 {
     TArray<UStaticMeshComponent*> MeshComps;
     GetComponents<UStaticMeshComponent>(MeshComps);
-    if (MeshComps.Num() == 0)
-    {
-        UE_LOG(LogTemp, Error, TEXT("Nessuna StaticMesh trovata nel Blueprint!"));
-        return;
-    }
     for (UStaticMeshComponent* CurrentMesh : MeshComps)
     {
         if (CurrentMesh && CurrentMesh->GetStaticMesh())
         {
-            FBox SphereBox = CurrentMesh->GetStaticMesh()->GetBoundingBox();
-            FVector RawSize = SphereBox.GetSize();
+            FVector RawSize = CurrentMesh->GetStaticMesh()->GetBoundingBox().GetSize();
             if (RawSize.X > 1.0f)
             {
                 float ScaleX = MaxDimensions.X / RawSize.X;
@@ -152,8 +140,6 @@ void ADronePawn::ApplyAutoScalingToMesh()
                 float ScaleZ = MaxDimensions.Z / RawSize.Z;
                 float UniformScale = FMath::Min3(ScaleX, ScaleY, ScaleZ);
                 CurrentMesh->SetRelativeScale3D(FVector(UniformScale));
-                CurrentMesh->UpdateBounds();
-                UE_LOG(LogTemp, Warning, TEXT("Mesh '%s' scalata a %f"), *CurrentMesh->GetName(), UniformScale);
             }
         }
     }

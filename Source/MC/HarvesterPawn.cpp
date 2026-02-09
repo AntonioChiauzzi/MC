@@ -1,8 +1,10 @@
 #include "HarvesterPawn.h"
+#include "Components/StaticMeshComponent.h"
 
 AHarvesterPawn::AHarvesterPawn()
 {
     PrimaryActorTick.bCanEverTick = true;
+    Velocity = FVector::ZeroVector;
 }
 
 void AHarvesterPawn::BeginPlay()
@@ -14,27 +16,21 @@ void AHarvesterPawn::BeginPlay()
 void AHarvesterPawn::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-    if (BatteryLevel > 0.0f)
+    if (BatteryLevel > 0.0f && !Velocity.IsNearlyZero())
     {
-        bool bIsMoving = false;
         if (TargetLocation.IsSet())
         {
             MoveToTarget(DeltaTime, TargetLocation.GetValue());
-            bIsMoving = !Velocity.IsNearlyZero();
         }
-        else if (!Velocity.IsNearlyZero())
+        else
         {
             Move(DeltaTime);
-            bIsMoving = true;
         }
         BatteryLevel = FMath::Max(0.0f, BatteryLevel - (BatteryConsumptionRate * DeltaTime));
-        if (bIsMoving)
-        {
-            HarvestCapacity += 0.1f * DeltaTime;
-            HarvestCapacity = FMath::Min(HarvestCapacity, 100.0f);
-        }
+        HarvestCapacity += 0.1f * DeltaTime;
+        HarvestCapacity = FMath::Min(HarvestCapacity, 100.0f);
     }
-    else
+    else if (BatteryLevel <= 0.0f)
     {
         Velocity = FVector::ZeroVector;
     }
@@ -58,8 +54,7 @@ void AHarvesterPawn::Move(float DeltaTime)
 void AHarvesterPawn::MoveToTarget(float DeltaTime, FVector Target)
 {
     FVector CurrentLoc = GetActorLocation();
-    float Speed = Velocity.Size();
-    if (Speed <= 0.0f) Speed = 250.0f;
+    float Speed = Velocity.Size() > 0.0f ? Velocity.Size() : 250.0f;
     float Distance = FVector::Dist2D(CurrentLoc, Target);
     if (Distance < FMath::Max(15.0f, Speed * DeltaTime))
     {
@@ -93,17 +88,13 @@ void AHarvesterPawn::ConfigureFromJson(const TSharedPtr<FJsonObject>& Json)
 {
     const TSharedPtr<FJsonObject>* Params;
     if (!Json->TryGetObjectField(TEXT("params"), Params)) return;
-
-
     const TSharedPtr<FJsonObject>* SpeedObj;
-
     if ((*Params)->TryGetObjectField(TEXT("speed"), SpeedObj))
     {
         Velocity.X = (*SpeedObj)->GetNumberField(TEXT("x"));
         Velocity.Y = (*SpeedObj)->GetNumberField(TEXT("y"));
         Velocity.Z = (*SpeedObj)->GetNumberField(TEXT("z"));
     }
-
     if (!(*Params)->TryGetNumberField(TEXT("battery"), BatteryLevel))
     {
         BatteryLevel = 100.0f;
@@ -123,10 +114,7 @@ void AHarvesterPawn::SaveToJson(const TSharedPtr<FJsonObject>& Json)
     Json->SetNumberField(TEXT("harvestCapacity"), HarvestCapacity);
 }
 
-FString AHarvesterPawn::GetEntityType() const
-{
-    return TEXT("Harvester");
-}
+FString AHarvesterPawn::GetEntityType() const { return TEXT("Harvester"); }
 
 void AHarvesterPawn::ApplyAutoScalingToMesh()
 {

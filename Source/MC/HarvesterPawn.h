@@ -24,15 +24,16 @@ public:
 
     virtual void ConfigureFromJson(const TSharedPtr<FJsonObject>& Json) override;
     virtual void SaveToJson(const TSharedPtr<FJsonObject>& Json) override;
+    virtual FString GetEntityType() const override;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
     float BatteryLevel;
 
     UPROPERTY(EditAnywhere)
-    float BatteryConsumptionRate = 0.3f; 
+    float BatteryConsumptionRate = 0.3f;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-    float HarvestCapacity = 0.0f; 
+    float HarvestCapacity = 0.0f;
 
     UPROPERTY(EditAnywhere)
     FVector Velocity = FVector::ZeroVector;
@@ -41,8 +42,6 @@ public:
     FVector MaxDimensions = FVector(600.0f, 400.0f, 350.0f);
 
     void ApplyAutoScalingToMesh();
-
-    virtual FString GetEntityType() const override;
 
 protected:
     virtual void BeginPlay() override;
