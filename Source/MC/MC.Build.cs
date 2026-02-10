@@ -15,13 +15,13 @@ public class MC : ModuleRules
             "Engine",
             "InputCore",
             "EnhancedInput",
-            "Landscape" 
+            "Landscape",
+            "DesktopPlatform"
         });
 
         PrivateDependencyModuleNames.AddRange(new string[] {
             "Json",
             "JsonUtilities",
-            "DesktopPlatform",
             "AssetRegistry",   
             "Slate",
             "SlateCore"
