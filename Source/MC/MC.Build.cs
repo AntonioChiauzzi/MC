@@ -16,7 +16,8 @@ public class MC : ModuleRules
             "InputCore",
             "EnhancedInput",
             "Landscape",
-            "DesktopPlatform"
+            "DesktopPlatform",
+            "PakFile"
         });
 
         PrivateDependencyModuleNames.AddRange(new string[] {

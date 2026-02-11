@@ -129,7 +129,6 @@ TSharedPtr<FJsonObject> UWorldStateManager::ConvertEnvironmentToJson() const
 
 void UWorldStateManager::LoadEntities()
 {
-    UpdateLandscapeBounds();
     const FString FilePath = FPaths::Combine(BaseDataPath, TEXT("entities.json"));
     FString Json;
     if (!FFileHelper::LoadFileToString(Json, *FilePath)) return;
@@ -147,6 +146,28 @@ void UWorldStateManager::LoadEntities()
         {
             SpawnedEntities.Add(NewActor);
             if (ResourceManager) ResourceManager->ManagedEntities.Add(NewActor);
+        }
+    }
+}
+
+void UWorldStateManager::ResizeLandscape(FVector TargetSize)
+{
+    for (TActorIterator<ALandscapeProxy> It(World); It; ++It)
+    {
+        ALandscapeProxy* Landscape = *It;
+        if (Landscape)
+        {
+            FBox SphereBox = Landscape->GetComponentsBoundingBox();
+            FVector CurrentSize = SphereBox.GetSize();
+            FVector NewScale = FVector(
+                (TargetSize.X > 0) ? (TargetSize.X / CurrentSize.X) * Landscape->GetActorScale3D().X : Landscape->GetActorScale3D().X,
+                (TargetSize.Y > 0) ? (TargetSize.Y / CurrentSize.Y) * Landscape->GetActorScale3D().Y : Landscape->GetActorScale3D().Y,
+                (TargetSize.Z > 0) ? (TargetSize.Z / CurrentSize.Z) * Landscape->GetActorScale3D().Z : Landscape->GetActorScale3D().Z
+            );
+            Landscape->SetActorScale3D(NewScale);
+            UpdateLandscapeBounds();
+            UE_LOG(LogTemp, Log, TEXT("Landscape ridimensionata a: %s cm"), *TargetSize.ToString());
+            break;
         }
     }
 }
@@ -312,27 +333,6 @@ TSharedPtr<FJsonObject> UWorldStateManager::ConvertEntityToJson(AMyBaseActor* Ac
         EntityObj->SetObjectField(TEXT("params"), Params);
     }
     return EntityObj;
-}
-
-void UWorldStateManager::UploadMap()
-{
-    UMCGameInstance* GI = Cast<UMCGameInstance>(GetWorld()->GetGameInstance());
-    if (!GI || GI->SavedMapPath.IsEmpty()) return;
-    FString SelectedDirectory = GI->SavedMapPath;
-    TArray<FString> FoundFiles;
-    IFileManager::Get().FindFiles(FoundFiles, *SelectedDirectory, TEXT("*.umap"));
-    if (FoundFiles.Num() > 0)
-    {
-        FString MapName = FPaths::GetBaseFilename(FoundFiles[0]);
-        FPackageName::RegisterMountPoint(TEXT("/Game/"), SelectedDirectory);
-        FString PackagePath = TEXT("/Game/") / MapName;
-        UE_LOG(LogTemp, Warning, TEXT("Caricamento da path esterno scelto: %s"), *PackagePath);
-        UGameplayStatics::OpenLevel(GetWorld(), FName(*PackagePath));
-    }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("Nessun file .umap trovato in: %s"), *SelectedDirectory);
-    }
 }
 
 void UWorldStateManager::OpenDirectoryDialogJson()

@@ -8,11 +8,9 @@ bool UMenuHandle::OpenFolderDialog(const UObject* WorldContextObject, FString Di
 {
 #if PLATFORM_WINDOWS
     IDesktopPlatform* DesktopPlatform = FDesktopPlatformModule::Get();
-
     if (DesktopPlatform)
     {
         void* ParentWindowHandle = nullptr;
-
         bool bSuccess = DesktopPlatform->OpenDirectoryDialog(
             ParentWindowHandle,
             DialogTitle,
@@ -23,8 +21,8 @@ bool UMenuHandle::OpenFolderDialog(const UObject* WorldContextObject, FString Di
         {
             if (UMCGameInstance* GI = Cast<UMCGameInstance>(WorldContextObject->GetWorld()->GetGameInstance()))
             {
-                GI->SavedMapPath = SelectedFolder;
-                UE_LOG(LogTemp, Log, TEXT("SavedMapPath impostato a: %s"), *GI->SavedMapPath);
+                GI->SavedBaseDataPath = SelectedFolder;
+                UE_LOG(LogTemp, Log, TEXT("SavedJsonPath impostato a: %s"), *GI->SavedBaseDataPath);
             }
         }
         return bSuccess;

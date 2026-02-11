@@ -19,6 +19,7 @@ AMyGameMode::AMyGameMode()
 void AMyGameMode::BeginPlay()
 {
     Super::BeginPlay();
+
     UMCGameInstance* GI = Cast<UMCGameInstance>(GetGameInstance());
     WorldManager = NewObject<UWorldStateManager>(this);
 
@@ -28,8 +29,9 @@ void AMyGameMode::BeginPlay()
         WorldManager->BaseDataPath = GI->SavedBaseDataPath;
         WorldManager->EntityRegistryAsset = RegistryConfig;
         WorldManager->Initialize(GetWorld());
+        ResizeMap(GI);
         Load();
-
+        float Interval = (GI->UserRefreshRate <= 0.0f) ? 60.0f : GI->UserRefreshRate;
         GetWorldTimerManager().SetTimer(
             SaveTimerHandle, 
             this, 
@@ -40,20 +42,14 @@ void AMyGameMode::BeginPlay()
             LoadTimerHandle, 
             this, 
             &AMyGameMode::Load, 
-            60.0f, 
+            Interval, 
             true);
-
-        UE_LOG(LogTemp, Log, TEXT("WorldManager inizializzato con successo."));
+        UE_LOG(LogTemp, Log, TEXT("WorldManager inizializzato correttamente in MappaEsterna."));
     }
 }
 
 void AMyGameMode::SetupWorldManagerPaths(UMCGameInstance* GI)
 {
-    if (GI->SavedMapPath.IsEmpty())
-    {
-        WorldManager->OpenDirectoryDialogMap();
-        WorldManager->UploadMap();
-    }
     if (GI->SavedBaseDataPath.IsEmpty())
     {
         WorldManager->OpenDirectoryDialogJson();
@@ -74,5 +70,16 @@ void AMyGameMode::Load()
         WorldManager->RemoveOldInstances();
         WorldManager->LoadEnvironment();
         WorldManager->LoadEntities();
+    }
+}
+
+void AMyGameMode::ResizeMap(UMCGameInstance* GI) {
+    if (GI->UserMapSize.X > 0 && GI->UserMapSize.Y > 0)
+    {
+        WorldManager->ResizeLandscape(GI->UserMapSize);
+    }
+    else
+    {
+        WorldManager->UpdateLandscapeBounds();
     }
 }

@@ -24,7 +24,6 @@ public:
     void SaveEnvironment() const;
     void LoadEntities();
     void SaveEntities();
-    void UploadMap();
     void OpenDirectoryDialogJson();
     void OpenDirectoryDialogMap();
     void RemoveOldInstances();
@@ -34,6 +33,10 @@ public:
 
     UPROPERTY(EditAnywhere, Category = "Registry")
     UEntityRegistryDataAsset* EntityRegistryAsset;
+
+    void ResizeLandscape(FVector TargetSize);
+
+    void UpdateLandscapeBounds();
 
 private:
     UWorld* World;
@@ -54,8 +57,6 @@ private:
     FVector MaxBound;
 
 protected:
-    void UpdateLandscapeBounds();
-
     AActor* SpawnEntityFromJson(const TSharedPtr<FJsonObject>& Obj);
 
     TSharedPtr<FJsonObject> ConvertEntityToJson(AMyBaseActor* Actor);

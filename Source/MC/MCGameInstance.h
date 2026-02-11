@@ -9,9 +9,18 @@ class MC_API UMCGameInstance : public UGameInstance
     GENERATED_BODY()
 
 public:
-    UPROPERTY(BlueprintReadWrite)
+    UPROPERTY(BlueprintReadWrite, Category = "Setup")
     FString SavedBaseDataPath;
 
-    UPROPERTY(BlueprintReadWrite)
+    UPROPERTY(BlueprintReadWrite, Category = "Setup")
     FString SavedMapPath;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Setup")
+    float UserRefreshRate = 60.0f;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Setup")
+    FVector UserMapSize = FVector(0.f, 0.f, 0.f);
+
+    UFUNCTION(BlueprintCallable)
+    void UploadMap();
 };
