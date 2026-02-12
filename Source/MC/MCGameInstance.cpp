@@ -3,6 +3,7 @@
 #include "IPlatformFilePak.h"
 #include "Misc/PackageName.h"
 #include "Kismet/GameplayStatics.h"
+#include <AssetRegistry/AssetRegistryModule.h>
 
 
 void UMCGameInstance::UploadMap()
@@ -14,8 +15,7 @@ void UMCGameInstance::UploadMap()
     }
     FString PakPath = SavedMapPath;
     FPakPlatformFile* PakPlatformFile = nullptr;
-    IPlatformFile& CurrentPlatformFile =
-        FPlatformFileManager::Get().GetPlatformFile();
+    IPlatformFile& CurrentPlatformFile = FPlatformFileManager::Get().GetPlatformFile();
     if (CurrentPlatformFile.GetName() == FString(TEXT("PakFile")))
     {
         PakPlatformFile = static_cast<FPakPlatformFile*>(&CurrentPlatformFile);
@@ -27,23 +27,22 @@ void UMCGameInstance::UploadMap()
         FPlatformFileManager::Get().SetPlatformFile(*PakPlatformFile);
     }
     const int32 PakOrder = 0;
-    if (!PakPlatformFile->Mount(*PakPath, PakOrder))
+    const FString MountPoint = TEXT("../../../MC/Content/");
+    if (!PakPlatformFile->Mount(*PakPath, PakOrder, *MountPoint))
     {
         UE_LOG(LogTemp, Error, TEXT("Mount fallito: %s"), *PakPath);
         return;
     }
     UE_LOG(LogTemp, Log, TEXT("Pak montato: %s"), *PakPath);
-    FPakFile* PakFile = new FPakFile(PakPlatformFile, *PakPath, false);
-    FString PakMountPoint = PakFile->GetMountPoint();
-    FPaths::MakeStandardFilename(PakMountPoint);
-    UE_LOG(LogTemp, Log, TEXT("Mount point pak: %s"), *PakMountPoint);
-    FPackageName::RegisterMountPoint(TEXT("/Game/"), PakMountPoint);
+    FPackageName::RegisterMountPoint(TEXT("/Game/"), MountPoint);
+    {
+        FAssetRegistryModule& AssetRegistryModule =
+            FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+        AssetRegistryModule.Get().ScanPathsSynchronous({ TEXT("/Game/MappaEsterna") }, true);
+
+        UE_LOG(LogTemp, Log, TEXT("AssetRegistry aggiornato per /Game/MappaEsterna"));
+    }
     FString LevelPath = TEXT("/Game/MappaEsterna");
-
     UE_LOG(LogTemp, Log, TEXT("Tentativo apertura livello: %s"), *LevelPath);
-
-    UGameplayStatics::OpenLevel(
-        GetWorld(),
-        FName(*LevelPath)
-    );
+    UGameplayStatics::OpenLevel(GetWorld(), FName(*LevelPath));
 }
