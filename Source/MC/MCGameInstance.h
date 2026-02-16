@@ -3,7 +3,7 @@
 #include "Engine/GameInstance.h"
 #include "MCGameInstance.generated.h"
 
-UCLASS()
+UCLASS(Blueprintable, BlueprintType)
 class MC_API UMCGameInstance : public UGameInstance
 {
     GENERATED_BODY()
