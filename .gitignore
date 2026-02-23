@@ -1,15 +1,47 @@
-# Unreal Engine
+# =====================
+# Unreal Engine (generated)
+# =====================
 Binaries/
 DerivedDataCache/
 Intermediate/
 Saved/
-.vs/
 
-# Visual Studio / VS Code
+# Unreal build ordering files (generated)
+Build/**/FileOpenOrder/
+
+# Optional: if you generate packaged builds here
+# Releases/
+
+# =====================
+# IDEs / Editors
+# =====================
+.vs/
+.idea/
+.vscode/
+
+# Visual Studio / MSBuild
 *.sln
 *.vcxproj*
+*.VC.db
+*.VC.opendb
+*.suo
+*.user
+
+# VS Code
 *.code-workspace
 
+# Rider
+*.sln.iml
+
+# =====================
+# Logs / temp / crash
+# =====================
+*.log
+*.tmp
+*.bak
+
+# =====================
 # OS
+# =====================
 .DS_Store
 Thumbs.db
