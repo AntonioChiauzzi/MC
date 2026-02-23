@@ -22,6 +22,15 @@ public:
     UPROPERTY()
     UEntityRegistryDataAsset* RegistryConfig;
 
+    UFUNCTION()
+    void InitAfterMapReady();
+
+    UFUNCTION()
+    void StartPlayerController();
+
+    UFUNCTION()
+    void AfterResizeNextTick();
+
 private:
     UPROPERTY()
     UWorldStateManager* WorldManager;

@@ -9,7 +9,7 @@
 class UStaticMeshComponent;
 
 UCLASS()
-class MC_API ADynamicPawn : public AMyBaseActor, public IEntityConfigurable, public IMovableVehicle
+class MC_API ADynamicPawn : public AMyBaseActor, public IEntityConfigurable
 {
     GENERATED_BODY()
 
@@ -29,20 +29,9 @@ public:
     virtual void SaveToJson(const TSharedPtr<FJsonObject>& Json) override;
     virtual FString GetEntityType() const override;
 
-    virtual void SetTargetLocation(TOptional<FVector> NewTarget) override;
-    virtual void Move(float DeltaTime) override;
-    virtual void MoveToTarget(float DeltaTime, FVector Target) override;
-
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
     float BatteryLevel;
 
-    UPROPERTY(EditAnywhere)
-    float BatteryConsumptionRate = 0.5f;
-
-    UPROPERTY()
-    FVector Velocity;
-
-    TOptional<FVector> TargetLocation;
 
     UPROPERTY(EditAnywhere, Category = "Visuals")
     FVector MaxDimensions = FVector(150.0f, 150.0f, 150.0f);

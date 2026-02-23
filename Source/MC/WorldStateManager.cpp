@@ -22,6 +22,9 @@
 #include "EngineUtils.h"
 #include "Landscape.h"      
 #include "LandscapeProxy.h"
+#include "Engine/SkyLight.h"
+#include "Engine/DirectionalLight.h"
+#include "Engine/ExponentialHeightFog.h"
 
 #include "Developer/DesktopPlatform/Public/IDesktopPlatform.h"
 #include "Developer/DesktopPlatform/Public/DesktopPlatformModule.h" 
@@ -131,45 +134,77 @@ void UWorldStateManager::LoadEntities()
 {
     const FString FilePath = FPaths::Combine(BaseDataPath, TEXT("entities.json"));
     FString Json;
-    if (!FFileHelper::LoadFileToString(Json, *FilePath)) return;
+    if (!FFileHelper::LoadFileToString(Json, *FilePath))
+        return;
     TSharedPtr<FJsonObject> Root;
-    if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json), Root) || !Root.IsValid()) return;
+    if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json), Root) || !Root.IsValid())
+        return;
     const TArray<TSharedPtr<FJsonValue>>* Arr;
-    if (!Root->TryGetArrayField(TEXT("entities"), Arr)) return;
+    if (!Root->TryGetArrayField(TEXT("entities"), Arr))
+        return;
     for (const auto& V : *Arr)
     {
-        auto Obj = V->AsObject();
-        if (!Obj.IsValid()) continue;
-        FString Type = Obj->GetStringField(TEXT("type"));
-        if (!EntityRegistryAsset || !EntityRegistryAsset->EntityMappings.Contains(Type)) continue;
+        const TSharedPtr<FJsonObject> Obj = V->AsObject();
+        if (!Obj.IsValid())
+            continue;
+        const FString Type = Obj->GetStringField(TEXT("type"));
+        if (!EntityRegistryAsset || !EntityRegistryAsset->EntityMappings.Contains(Type))
+            continue;
         if (AActor* NewActor = SpawnEntityFromJson(Obj))
         {
             SpawnedEntities.Add(NewActor);
-            if (ResourceManager) ResourceManager->ManagedEntities.Add(NewActor);
+            if (ResourceManager)
+            {
+                ResourceManager->ManagedEntities.Add(NewActor);
+            }
         }
     }
 }
 
-void UWorldStateManager::ResizeLandscape(FVector TargetSize)
+void UWorldStateManager::ResizeLandscape(const FVector TargetSize)
 {
+    if (!World)
+    {
+        UE_LOG(LogTemp, Error, TEXT("ResizeLandscape: World nullo"));
+        return;
+    }
+    ALandscapeProxy* Landscape = nullptr;
     for (TActorIterator<ALandscapeProxy> It(World); It; ++It)
     {
-        ALandscapeProxy* Landscape = *It;
-        if (Landscape)
-        {
-            FBox SphereBox = Landscape->GetComponentsBoundingBox();
-            FVector CurrentSize = SphereBox.GetSize();
-            FVector NewScale = FVector(
-                (TargetSize.X > 0) ? (TargetSize.X / CurrentSize.X) * Landscape->GetActorScale3D().X : Landscape->GetActorScale3D().X,
-                (TargetSize.Y > 0) ? (TargetSize.Y / CurrentSize.Y) * Landscape->GetActorScale3D().Y : Landscape->GetActorScale3D().Y,
-                (TargetSize.Z > 0) ? (TargetSize.Z / CurrentSize.Z) * Landscape->GetActorScale3D().Z : Landscape->GetActorScale3D().Z
-            );
-            Landscape->SetActorScale3D(NewScale);
-            UpdateLandscapeBounds();
-            UE_LOG(LogTemp, Log, TEXT("Landscape ridimensionata a: %s cm"), *TargetSize.ToString());
-            break;
-        }
+        Landscape = *It;
+        break;
     }
+    if (!Landscape)
+    {
+        UE_LOG(LogTemp, Error, TEXT("ResizeLandscape: nessun LandscapeProxy trovato"));
+        return;
+    }
+    const FBox BoundsBefore = Landscape->GetComponentsBoundingBox(true);
+    const FVector SizeBefore = BoundsBefore.GetSize();
+    if (SizeBefore.X <= KINDA_SMALL_NUMBER || SizeBefore.Y <= KINDA_SMALL_NUMBER)
+    {
+        UE_LOG(LogTemp, Error, TEXT("ResizeLandscape: bounds invalidi (%s)"), *SizeBefore.ToString());
+        return;
+    }
+    const FVector OldScale = Landscape->GetActorScale3D();
+    FVector NewScale = OldScale;
+    if (TargetSize.X > 0.f) NewScale.X = OldScale.X * (TargetSize.X / SizeBefore.X);
+    if (TargetSize.Y > 0.f) NewScale.Y = OldScale.Y * (TargetSize.Y / SizeBefore.Y);
+    NewScale.Z = OldScale.Z;
+    UE_LOG(LogTemp, Warning, TEXT("ResizeLandscape BEFORE: Size=%s Scale=%s  Target=%s"),
+        *SizeBefore.ToString(), *OldScale.ToString(), *TargetSize.ToString());
+    Landscape->SetActorScale3D(NewScale);
+    Landscape->MarkComponentsRenderStateDirty();
+    Landscape->ForceNetUpdate();
+    const FBox BoundsAfter = Landscape->GetComponentsBoundingBox(true);
+    const FVector SizeAfter = BoundsAfter.GetSize();
+    const FVector CenterAfter = BoundsAfter.GetCenter();
+    WorldOffset = FVector(-CenterAfter.X, -CenterAfter.Y, 0.f);
+    UE_LOG(LogTemp, Warning, TEXT("ResizeLandscape AFTER:  Size=%s Scale=%s  Center=%s  WorldOffset=%s"),
+        *SizeAfter.ToString(),
+        *Landscape->GetActorScale3D().ToString(),
+        *CenterAfter.ToString(),
+        *WorldOffset.ToString());
 }
 
 void UWorldStateManager::UpdateLandscapeBounds()
@@ -179,7 +214,7 @@ void UWorldStateManager::UpdateLandscapeBounds()
     {
         if (ALandscapeProxy* LP = *It)
         {
-            TotalBounds += LP->GetComponentsBoundingBox();
+            TotalBounds += LP->GetComponentsBoundingBox(true);
         }
     }
     if (TotalBounds.IsValid)
@@ -198,32 +233,47 @@ void UWorldStateManager::UpdateLandscapeBounds()
             break;
         }
     }
-    UE_LOG(LogTemp, Log, TEXT("Confini Landscape Aggiornati: Min %s - Max %s"),*MinBound.ToString(), *MaxBound.ToString());
+    const FVector MinLogical = MinBound + WorldOffset;
+    const FVector MaxLogical = MaxBound + WorldOffset;
+    UE_LOG(LogTemp, Log, TEXT("Confini Landscape Aggiornati: Min %s - Max %s | Logical Min %s - Max %s | WorldOffset %s"),
+        *MinBound.ToString(), *MaxBound.ToString(),
+        *MinLogical.ToString(), *MaxLogical.ToString(),
+        *WorldOffset.ToString());
 }
 
 AActor* UWorldStateManager::SpawnEntityFromJson(const TSharedPtr<FJsonObject>& Obj)
 {
     FString Type = Obj->GetStringField(TEXT("type"));
+    if (!EntityRegistryAsset || !EntityRegistryAsset->EntityMappings.Contains(Type))
+        return nullptr;
     TSubclassOf<AActor> ClassToSpawn = EntityRegistryAsset->EntityMappings[Type].ActorClass;
+    if (!World || !*ClassToSpawn)
+        return nullptr;
+    const FVector MinLogical = MinBound + WorldOffset;
+    const FVector MaxLogical = MaxBound + WorldOffset;
     auto LocObj = Obj->GetObjectField(TEXT("location"));
-    FVector Loc(
+    const FVector LocLogical(
         LocObj->GetNumberField(TEXT("x")),
         LocObj->GetNumberField(TEXT("y")),
         FMath::Max(0.0f, LocObj->GetNumberField(TEXT("z")))
     );
-    if (Loc.X < MinBound.X || Loc.X > MaxBound.X || Loc.Y < MinBound.Y || Loc.Y > MaxBound.Y)
+    if (LocLogical.X < MinLogical.X || LocLogical.X > MaxLogical.X ||
+        LocLogical.Y < MinLogical.Y || LocLogical.Y > MaxLogical.Y)
     {
-        UE_LOG(LogTemp, Warning, TEXT("Entità %s fuori Landscape!"), *Type);
+        UE_LOG(LogTemp, Warning, TEXT("Entità %s fuori Landscape (Logical)! Loc=%s  LogicalMin=%s  LogicalMax=%s"),
+            *Type, *LocLogical.ToString(), *MinLogical.ToString(), *MaxLogical.ToString());
         return nullptr;
     }
-    AActor* A = World->SpawnActor<AActor>(ClassToSpawn, Loc, FRotator::ZeroRotator);
+    const FVector LocWorld = ApplyWorldOffset_LogicalToWorld(LocLogical);
+    AActor* A = World->SpawnActor<AActor>(ClassToSpawn, LocWorld, FRotator::ZeroRotator);
     if (!A) return nullptr;
     if (AMyBaseActor* MyBaseActor = Cast<AMyBaseActor>(A))
     {
         MyBaseActor->ID = Obj->GetStringField(TEXT("id"));
         MyBaseActor->Name = Obj->HasField(TEXT("name")) ? Obj->GetStringField(TEXT("name")) : MyBaseActor->ID;
-        MyBaseActor->MapMin = MinBound;
-        MyBaseActor->MapMax = MaxBound;
+        MyBaseActor->MapMin = MinLogical;
+        MyBaseActor->MapMax = MaxLogical;
+        MyBaseActor->WorldOffset = WorldOffset;
 
 #if WITH_EDITOR
         A->SetActorLabel(MyBaseActor->Name);
@@ -231,13 +281,18 @@ AActor* UWorldStateManager::SpawnEntityFromJson(const TSharedPtr<FJsonObject>& O
     }
 
     const TSharedPtr<FJsonObject>* TargetObjPtr;
-    if (Obj->TryGetObjectField(TEXT("targetLocation"), TargetObjPtr))
+    if (Obj->TryGetObjectField(TEXT("targetLocation"), TargetObjPtr) && TargetObjPtr && TargetObjPtr->IsValid())
     {
         auto TargetObj = *TargetObjPtr;
-        FVector TLoc(TargetObj->GetNumberField(TEXT("x")), TargetObj->GetNumberField(TEXT("y")), TargetObj->GetNumberField(TEXT("z")));
+        const FVector TargetLogical(
+            TargetObj->GetNumberField(TEXT("x")),
+            TargetObj->GetNumberField(TEXT("y")),
+            TargetObj->GetNumberField(TEXT("z"))
+        );
+        const FVector TargetWorld = ApplyWorldOffset_LogicalToWorld(TargetLogical);
         if (IMovableVehicle* Movable = Cast<IMovableVehicle>(A))
         {
-            Movable->SetTargetLocation(TLoc);
+            Movable->SetTargetLocation(TOptional<FVector>(TargetWorld));
         }
     }
     if (IEntityConfigurable* Configurable = Cast<IEntityConfigurable>(A))
@@ -305,34 +360,77 @@ TSharedPtr<FJsonObject> UWorldStateManager::ConvertEntityToJson(AMyBaseActor* Ac
     TSharedPtr<FJsonObject> EntityObj = MakeShared<FJsonObject>();
     EntityObj->SetStringField(TEXT("id"), Actor->ID);
     EntityObj->SetStringField(TEXT("type"), Actor->GetEntityType());
-    FVector L = Actor->GetActorLocation();
+    const FVector WorldLoc = Actor->GetActorLocation();
+    const FVector LogicalLoc = WorldLoc + Actor->WorldOffset;
     TSharedPtr<FJsonObject> Loc = MakeShared<FJsonObject>();
-    Loc->SetNumberField(TEXT("x"), L.X);
-    Loc->SetNumberField(TEXT("y"), L.Y);
-    Loc->SetNumberField(TEXT("z"), FMath::Max(0.0f, L.Z));
+    Loc->SetNumberField(TEXT("x"), LogicalLoc.X);
+    Loc->SetNumberField(TEXT("y"), LogicalLoc.Y);
+    Loc->SetNumberField(TEXT("z"), FMath::Max(0.0f, LogicalLoc.Z));
     EntityObj->SetObjectField(TEXT("location"), Loc);
     TSharedPtr<FJsonObject> Params = MakeShared<FJsonObject>();
     if (IEntityConfigurable* Configurable = Cast<IEntityConfigurable>(Actor))
     {
         Configurable->SaveToJson(Params);
     }
-    TOptional<FVector> CurrentTarget;
-    if (ATractorPawn* Tractor = Cast<ATractorPawn>(Actor)) CurrentTarget = Tractor->TargetLocation;
-    else if (ADronePawn* Drone = Cast<ADronePawn>(Actor)) CurrentTarget = Drone->TargetLocation;
-    else if (AHarvesterPawn* Harvester = Cast<AHarvesterPawn>(Actor)) CurrentTarget = Harvester->TargetLocation;
-    if (CurrentTarget.IsSet())
-    {
-        TSharedPtr<FJsonObject> TObj = MakeShared<FJsonObject>();
-        TObj->SetNumberField(TEXT("x"), CurrentTarget.GetValue().X);
-        TObj->SetNumberField(TEXT("y"), CurrentTarget.GetValue().Y);
-        TObj->SetNumberField(TEXT("z"), CurrentTarget.GetValue().Z);
-        Params->SetObjectField(TEXT("targetLocation"), TObj);
-    }
     if (Params->Values.Num() > 0)
     {
         EntityObj->SetObjectField(TEXT("params"), Params);
     }
+    TOptional<FVector> CurrentTargetWorld;
+    if (ATractorPawn* Tractor = Cast<ATractorPawn>(Actor)) CurrentTargetWorld = Tractor->TargetLocation;
+    else if (ADronePawn* Drone = Cast<ADronePawn>(Actor)) CurrentTargetWorld = Drone->TargetLocation;
+    else if (AHarvesterPawn* Harvester = Cast<AHarvesterPawn>(Actor)) CurrentTargetWorld = Harvester->TargetLocation;
+    if (CurrentTargetWorld.IsSet())
+    {
+        const FVector TargetLogical = CurrentTargetWorld.GetValue() + Actor->WorldOffset;
+        TSharedPtr<FJsonObject> TObj = MakeShared<FJsonObject>();
+        TObj->SetNumberField(TEXT("x"), TargetLogical.X);
+        TObj->SetNumberField(TEXT("y"), TargetLogical.Y);
+        TObj->SetNumberField(TEXT("z"), TargetLogical.Z);
+        EntityObj->SetObjectField(TEXT("targetLocation"), TObj);
+    }
     return EntityObj;
+}
+
+FVector UWorldStateManager::ComputeTargetSizeFromEntitiesJson(float Margin) const
+{
+    const FString FilePath = FPaths::Combine(BaseDataPath, TEXT("entities.json"));
+    FString Json;
+    if (!FFileHelper::LoadFileToString(Json, *FilePath))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ComputeTargetSizeFromEntitiesJson: impossibile leggere %s"), *FilePath);
+        return FVector::ZeroVector;
+    }
+    TSharedPtr<FJsonObject> Root;
+    if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json), Root) || !Root.IsValid())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ComputeTargetSizeFromEntitiesJson: JSON non valido"));
+        return FVector::ZeroVector;
+    }
+    const TArray<TSharedPtr<FJsonValue>>* Arr = nullptr;
+    if (!Root->TryGetArrayField(TEXT("entities"), Arr) || !Arr)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ComputeTargetSizeFromEntitiesJson: campo 'entities' mancante"));
+        return FVector::ZeroVector;
+    }
+    double MaxAbsX = 0.0;
+    double MaxAbsY = 0.0;
+    for (const auto& V : *Arr)
+    {
+        const TSharedPtr<FJsonObject> Obj = V->AsObject();
+        if (!Obj.IsValid() || !Obj->HasField(TEXT("location")))
+            continue;
+        const TSharedPtr<FJsonObject> LocObj = Obj->GetObjectField(TEXT("location"));
+        const double X = LocObj->GetNumberField(TEXT("x"));
+        const double Y = LocObj->GetNumberField(TEXT("y"));
+        MaxAbsX = FMath::Max(MaxAbsX, FMath::Abs(X));
+        MaxAbsY = FMath::Max(MaxAbsY, FMath::Abs(Y));
+    }
+    const float TargetX = float(MaxAbsX * 2.0 + Margin * 2.0);
+    const float TargetY = float(MaxAbsY * 2.0 + Margin * 2.0);
+    UE_LOG(LogTemp, Warning, TEXT("FitToData: MaxAbsX=%.2f MaxAbsY=%.2f => TargetSize X=%.2f Y=%.2f (Margin=%.2f)"),
+        float(MaxAbsX), float(MaxAbsY), TargetX, TargetY, Margin);
+    return FVector(TargetX, TargetY, 0.f);
 }
 
 void UWorldStateManager::OpenDirectoryDialogJson()

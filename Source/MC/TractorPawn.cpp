@@ -40,41 +40,46 @@ void ATractorPawn::Move(float DeltaTime)
     TargetRotation.Pitch = 0.0f;
     TargetRotation.Roll = 0.0f;
     SetActorRotation(FMath::RInterpTo(GetActorRotation(), TargetRotation, DeltaTime, 4.0f));
-    FVector NewLoc = GetActorLocation() + (Velocity * DeltaTime);
-    if (NewLoc.X < MapMin.X || NewLoc.X > MapMax.X || NewLoc.Y < MapMin.Y || NewLoc.Y > MapMax.Y)
+    const FVector NewLocWorld = GetActorLocation() + (Velocity * DeltaTime);
+    const FVector NewLocLogical = NewLocWorld + WorldOffset;
+
+    if (NewLocLogical.X < MapMin.X || NewLocLogical.X > MapMax.X ||
+        NewLocLogical.Y < MapMin.Y || NewLocLogical.Y > MapMax.Y)
     {
         Velocity = FVector::ZeroVector;
         return;
     }
-    SetActorLocation(NewLoc);
+    SetActorLocation(NewLocWorld);
 }
 
 void ATractorPawn::MoveToTarget(float DeltaTime, FVector Target)
 {
-    FVector CurrentLoc = GetActorLocation();
-    float Speed = Velocity.Size() > 0.0f ? Velocity.Size() : 300.0f;
-    float Distance = FVector::Dist2D(CurrentLoc, Target);
+    const FVector CurrentLocWorld = GetActorLocation();
+    const float Speed = Velocity.Size() > 0.0f ? Velocity.Size() : 300.0f;
+    const float Distance = FVector::Dist2D(CurrentLocWorld, Target);
     if (Distance < FMath::Max(15.0f, Speed * DeltaTime))
     {
-        SetActorLocation(FVector(Target.X, Target.Y, CurrentLoc.Z));
+        SetActorLocation(FVector(Target.X, Target.Y, CurrentLocWorld.Z));
         Velocity = FVector::ZeroVector;
         TargetLocation.Reset();
         return;
     }
-    FVector Direction = (Target - CurrentLoc).GetSafeNormal();
+    FVector Direction = (Target - CurrentLocWorld).GetSafeNormal();
     Direction.Z = 0.0f;
     FRotator TargetRotation = Direction.Rotation();
     TargetRotation.Pitch = 0.0f;
     TargetRotation.Roll = 0.0f;
     SetActorRotation(FMath::RInterpTo(GetActorRotation(), TargetRotation, DeltaTime, 4.0f));
-    FVector NewLoc = CurrentLoc + (Direction * Speed * DeltaTime);
-    if (NewLoc.X < MapMin.X || NewLoc.X > MapMax.X || NewLoc.Y < MapMin.Y || NewLoc.Y > MapMax.Y)
+    const FVector NewLocWorld = CurrentLocWorld + (Direction * Speed * DeltaTime);
+    const FVector NewLocLogical = NewLocWorld + WorldOffset;
+    if (NewLocLogical.X < MapMin.X || NewLocLogical.X > MapMax.X ||
+        NewLocLogical.Y < MapMin.Y || NewLocLogical.Y > MapMax.Y)
     {
         Velocity = FVector::ZeroVector;
         TargetLocation.Reset();
         return;
     }
-    SetActorLocation(NewLoc);
+    SetActorLocation(NewLocWorld);
 }
 
 void ATractorPawn::SetTargetLocation(TOptional<FVector> NewTarget)

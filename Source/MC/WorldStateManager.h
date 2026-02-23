@@ -34,9 +34,29 @@ public:
     UPROPERTY(EditAnywhere, Category = "Registry")
     UEntityRegistryDataAsset* EntityRegistryAsset;
 
-    void ResizeLandscape(FVector TargetSize);
+    void ResizeLandscape(const FVector TargetSize);
 
     void UpdateLandscapeBounds();
+
+    UPROPERTY(VisibleAnywhere, Category = "Map Bounds")
+    FVector MinBound;
+
+    UPROPERTY(VisibleAnywhere, Category = "Map Bounds")
+    FVector MaxBound;
+
+    FVector WorldOffset = FVector::ZeroVector;
+
+    FVector ApplyWorldOffset_LogicalToWorld(const FVector& LogicalPos) const
+    {
+        return LogicalPos - WorldOffset;
+    }
+
+    FVector ApplyWorldOffset_WorldToLogical(const FVector& WorldPos) const
+    {
+        return WorldPos + WorldOffset;
+    }
+
+    FVector ComputeTargetSizeFromEntitiesJson(float Margin = 0.f) const;
 
 private:
     UWorld* World;
@@ -49,12 +69,6 @@ private:
 
     UPROPERTY()
     UResourceManager* ResourceManager;
-
-    UPROPERTY(VisibleAnywhere, Category = "Map Bounds")
-    FVector MinBound;
-
-    UPROPERTY(VisibleAnywhere, Category = "Map Bounds")
-    FVector MaxBound;
 
 protected:
     AActor* SpawnEntityFromJson(const TSharedPtr<FJsonObject>& Obj);

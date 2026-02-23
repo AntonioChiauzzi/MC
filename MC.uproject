@@ -24,6 +24,10 @@
 			"SupportedTargetPlatforms": [
 				"Win64"
 			]
-		}
+		},
+		{
+        		"Name": "ExternalMaps",
+        		"Enabled": true
+    		}
 	]
 }

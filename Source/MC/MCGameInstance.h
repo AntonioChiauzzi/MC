@@ -23,4 +23,7 @@ public:
 
     UFUNCTION(BlueprintCallable)
     void UploadMap();
+
+    UFUNCTION()
+    void OnMapLoaded(UWorld* LoadedWorld);
 };

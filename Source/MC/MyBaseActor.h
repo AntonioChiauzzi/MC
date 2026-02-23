@@ -31,6 +31,9 @@ public:
     UPROPERTY(VisibleAnywhere, Category = "Base Actor")
     FVector MapMax;
 
+    UPROPERTY(VisibleAnywhere, Category = "Base Actor")
+    FVector WorldOffset = FVector::ZeroVector;
+
     FString GetEntityId();
 
     FString GetEntityName();

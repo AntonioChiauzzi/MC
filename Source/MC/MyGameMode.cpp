@@ -5,9 +5,16 @@
 #include <Kismet/GameplayStatics.h>
 #include "WorldStateManager.h"
 #include "MCGameInstance.h"
+#include "FreeCamPawn.h"
+#include "SimPlayerController.h"
+#include "EngineUtils.h"
+#include "Landscape.h"
+#include "DrawDebugHelpers.h"
 
 AMyGameMode::AMyGameMode()
 {
+    PlayerControllerClass = ASimPlayerController::StaticClass();
+    DefaultPawnClass = AFreeCamPawn::StaticClass();
     static ConstructorHelpers::FObjectFinder<UEntityRegistryDataAsset> RegistryAssetObj(TEXT("/Game/Data/DA_EntityRegistry.DA_EntityRegistry"));
 
     if (RegistryAssetObj.Succeeded())
@@ -19,32 +26,38 @@ AMyGameMode::AMyGameMode()
 void AMyGameMode::BeginPlay()
 {
     Super::BeginPlay();
+}
 
+void AMyGameMode::InitAfterMapReady()
+{
+    StartPlayerController();
     UMCGameInstance* GI = Cast<UMCGameInstance>(GetGameInstance());
     WorldManager = NewObject<UWorldStateManager>(this);
-
     if (GI && WorldManager)
     {
         SetupWorldManagerPaths(GI);
         WorldManager->BaseDataPath = GI->SavedBaseDataPath;
         WorldManager->EntityRegistryAsset = RegistryConfig;
         WorldManager->Initialize(GetWorld());
-        ResizeMap(GI);
-        Load();
-        float Interval = (GI->UserRefreshRate <= 0.0f) ? 60.0f : GI->UserRefreshRate;
-        GetWorldTimerManager().SetTimer(
-            SaveTimerHandle, 
-            this, 
-            &AMyGameMode::SaveWorld, 
-            1800.0f, 
-            true);
-        GetWorldTimerManager().SetTimer(
-            LoadTimerHandle, 
-            this, 
-            &AMyGameMode::Load, 
-            Interval, 
-            true);
-        UE_LOG(LogTemp, Log, TEXT("WorldManager inizializzato correttamente in MappaEsterna."));
+        const FVector FitTarget = WorldManager->ComputeTargetSizeFromEntitiesJson(200.f);
+        if (FitTarget.X > 0.f && FitTarget.Y > 0.f)
+        {
+            WorldManager->ResizeLandscape(FitTarget);
+        }
+        else if (GI->UserMapSize.X > 0.f && GI->UserMapSize.Y > 0.f)
+        {
+            WorldManager->ResizeLandscape(GI->UserMapSize);
+        }
+        else
+        {
+            WorldManager->UpdateLandscapeBounds();
+        }
+        GetWorldTimerManager().SetTimerForNextTick(this, &AMyGameMode::AfterResizeNextTick);
+        GetWorldTimerManager().SetTimer(SaveTimerHandle, this, &AMyGameMode::SaveWorld, 1800.0f, true);
+        UE_LOG(LogTemp, Log, TEXT("WorldManager inizializzato correttamente in MappaEsterna. BaseDataPath=%s FitTarget=%s UserMapSize=%s"),
+            *WorldManager->BaseDataPath,
+            *FitTarget.ToString(),
+            *GI->UserMapSize.ToString());
     }
 }
 
@@ -81,5 +94,65 @@ void AMyGameMode::ResizeMap(UMCGameInstance* GI) {
     else
     {
         WorldManager->UpdateLandscapeBounds();
+    }
+}
+
+void AMyGameMode::AfterResizeNextTick()
+{
+    if (!WorldManager)
+        return;
+    WorldManager->UpdateLandscapeBounds();
+    const FVector Min = WorldManager->MinBound;
+    const FVector Max = WorldManager->MaxBound;
+    const FVector CenterXYWorld(
+        (Min.X + Max.X) * 0.5f,
+        (Min.Y + Max.Y) * 0.5f,
+        0.f
+    );
+    const float CamZ = Max.Z + 2000.f;
+    const FVector CamLocWorld(CenterXYWorld.X, CenterXYWorld.Y, CamZ);
+    if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+    {
+        if (APawn* Pawn = PC->GetPawn())
+        {
+            Pawn->SetActorLocation(CamLocWorld);
+            PC->SetControlRotation(FRotator(-60.f, 0.f, 0.f));
+        }
+    }
+    Load();
+    if (UMCGameInstance* GI = Cast<UMCGameInstance>(GetGameInstance()))
+    {
+        const float Interval = (GI->UserRefreshRate <= 0.0f) ? 60.0f : GI->UserRefreshRate;
+
+        GetWorldTimerManager().ClearTimer(LoadTimerHandle);
+        GetWorldTimerManager().SetTimer(LoadTimerHandle, this, &AMyGameMode::Load, Interval, true);
+    }
+}
+
+void AMyGameMode::StartPlayerController()
+{
+    APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+    if (!PC)
+    {
+        UE_LOG(LogTemp, Error, TEXT("No PlayerController"));
+        return;
+    }
+    PC->SetInputMode(FInputModeGameOnly());
+    PC->bShowMouseCursor = false;
+    PC->bEnableClickEvents = false;
+    PC->bEnableMouseOverEvents = false;
+    if (!PC->GetPawn())
+    {
+        FActorSpawnParameters SP;
+        SP.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+        AFreeCamPawn* CamPawn = GetWorld()->SpawnActor<AFreeCamPawn>(
+            AFreeCamPawn::StaticClass(),
+            FVector(0, 0, 2000), FRotator(-60, 0, 0), SP);
+        PC->Possess(CamPawn);
+        UE_LOG(LogTemp, Warning, TEXT("Spawned+Possessed FreeCamPawn"));
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Already has Pawn: %s"), *PC->GetPawn()->GetName());
     }
 }
