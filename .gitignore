@@ -10,7 +10,8 @@ Saved/
 Build/**/FileOpenOrder/
 
 # Optional: if you generate packaged builds here
-# Releases/
+Releases/
+*.pak
 
 # =====================
 # IDEs / Editors
