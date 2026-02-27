@@ -18,7 +18,8 @@ public class MC : ModuleRules
             "Landscape",
             "DesktopPlatform",
             "PakFile",
-            "AssetRegistry"
+            "AssetRegistry",
+            "glTFRuntime"
         });
 
         PrivateDependencyModuleNames.AddRange(new string[] {

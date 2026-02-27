@@ -26,8 +26,12 @@
 			]
 		},
 		{
-        		"Name": "ExternalMaps",
-        		"Enabled": true
-    		}
+			"Name": "ExternalMaps",
+			"Enabled": true
+		},
+		{
+			"Name": "glTFRuntime",
+			"Enabled": true
+		}
 	]
 }

@@ -36,5 +36,6 @@ public:
     UPROPERTY(EditAnywhere, Category = "Visuals")
     FVector MaxDimensions = FVector(150.0f, 150.0f, 150.0f);
 
+    UFUNCTION(BlueprintCallable)
     void ApplyAutoScalingToMesh();
 };

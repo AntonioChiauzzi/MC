@@ -21,6 +21,9 @@ public:
     UPROPERTY(BlueprintReadWrite, Category = "Setup")
     FVector UserMapSize = FVector(0.f, 0.f, 0.f);
 
+    UPROPERTY(BlueprintReadWrite, Category = "Setup")
+    FString SavedDynamicGltfPath;
+
     UFUNCTION(BlueprintCallable)
     void UploadMap();
 

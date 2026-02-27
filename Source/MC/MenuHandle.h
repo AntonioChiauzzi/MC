@@ -15,4 +15,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "FileDialog")
 	static bool OpenFileDialog(const UObject* WorldContextObject, FString DialogTitle, FString DefaultPath, FString FileTypes, FString& SelectedFile);
+
+	UFUNCTION(BlueprintCallable, Category = "FileDialogAsset")
+	static bool OpenFileDialogAssets(const UObject* WorldContextObject, FString DialogTitle, FString DefaultPath, FString FileTypes, FString& SelectedFile);
 };
