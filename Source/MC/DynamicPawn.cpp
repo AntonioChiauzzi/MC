@@ -54,30 +54,20 @@ FString ADynamicPawn::GetEntityType() const
 
 void ADynamicPawn::ApplyAutoScalingToMesh()
 {
-	TArray<UStaticMeshComponent*> MeshComps;
-	GetComponents<UStaticMeshComponent>(MeshComps);
-	if (MeshComps.Num() == 0)
+	USceneComponent* RootToScale = GetRootComponent();
+	FVector Origin, BoxExtent;
+	GetActorBounds(true, Origin, BoxExtent);
+	FVector TotalSize = BoxExtent * 2.0f;
+	if (TotalSize.X > 1.0f)
 	{
-		UE_LOG(LogTemp, Error, TEXT("Nessuna StaticMesh trovata nel Blueprint!"));
-		return;
-	}
-	for (UStaticMeshComponent* CurrentMesh : MeshComps)
-	{
-		if (CurrentMesh && CurrentMesh->GetStaticMesh())
+		float ScaleX = MaxDimensions.X / TotalSize.X;
+		float ScaleY = MaxDimensions.Y / TotalSize.Y;
+		float ScaleZ = MaxDimensions.Z / TotalSize.Z;
+		float UniformScale = FMath::Min3(ScaleX, ScaleY, ScaleZ);
+		if (RootToScale)
 		{
-			FBox SphereBox = CurrentMesh->GetStaticMesh()->GetBoundingBox();
-			FVector RawSize = SphereBox.GetSize();
-			if (RawSize.X > 1.0f)
-			{
-				float ScaleX = MaxDimensions.X / RawSize.X;
-				float ScaleY = MaxDimensions.Y / RawSize.Y;
-				float ScaleZ = MaxDimensions.Z / RawSize.Z;
-				float UniformScale = FMath::Min3(ScaleX, ScaleY, ScaleZ);
-
-				CurrentMesh->SetRelativeScale3D(FVector(UniformScale));
-				CurrentMesh->UpdateBounds();
-				UE_LOG(LogTemp, Warning, TEXT("Mesh '%s' scalata a %f"), *CurrentMesh->GetName(), UniformScale);
-			}
+			RootToScale->SetRelativeScale3D(FVector(UniformScale));
+			UE_LOG(LogTemp, Warning, TEXT("Mesh dinamica scalata a %f"), UniformScale);
 		}
 	}
 }
