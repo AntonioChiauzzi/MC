@@ -18,7 +18,9 @@ ADynamicPawn::ADynamicPawn()
 void ADynamicPawn::BeginPlay()
 {
 	Super::BeginPlay();
-	ApplyAutoScalingToMesh();
+	UE_LOG(LogTemp, Warning, TEXT("ADynamicPawn::BeginPlay - Mesh=%s Scale=%s"),
+		*GetNameSafe(MeshComponent ? MeshComponent->GetStaticMesh() : nullptr),
+		*GetActorScale3D().ToString());
 }
 
 void ADynamicPawn::Tick(float DeltaTime)

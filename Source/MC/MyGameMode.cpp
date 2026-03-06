@@ -26,39 +26,70 @@ AMyGameMode::AMyGameMode()
 void AMyGameMode::BeginPlay()
 {
     Super::BeginPlay();
+    const FString CurrentLevelName = UGameplayStatics::GetCurrentLevelName(this, true);
+    const FString WorldName = GetWorld() ? GetWorld()->GetName() : TEXT("NO_WORLD");
+    UE_LOG(LogTemp, Warning,
+        TEXT("AMyGameMode::BeginPlay() | World=%s | Level=%s | GameMode=%s"),
+        *WorldName,
+        *CurrentLevelName,
+        *GetClass()->GetName());
+    InitAfterMapReady();
 }
 
 void AMyGameMode::InitAfterMapReady()
 {
+    UE_LOG(LogTemp, Warning, TEXT("InitAfterMapReady: START"));
     StartPlayerController();
     UMCGameInstance* GI = Cast<UMCGameInstance>(GetGameInstance());
-    WorldManager = NewObject<UWorldStateManager>(this);
-    if (GI && WorldManager)
+    if (!GI)
     {
-        SetupWorldManagerPaths(GI);
-        WorldManager->BaseDataPath = GI->SavedBaseDataPath;
-        WorldManager->EntityRegistryAsset = RegistryConfig;
-        WorldManager->Initialize(GetWorld());
-        const FVector FitTarget = WorldManager->ComputeTargetSizeFromEntitiesJson(200.f);
-        if (FitTarget.X > 0.f && FitTarget.Y > 0.f)
-        {
-            WorldManager->ResizeLandscape(FitTarget);
-        }
-        else if (GI->UserMapSize.X > 0.f && GI->UserMapSize.Y > 0.f)
-        {
-            WorldManager->ResizeLandscape(GI->UserMapSize);
-        }
-        else
-        {
-            WorldManager->UpdateLandscapeBounds();
-        }
-        GetWorldTimerManager().SetTimerForNextTick(this, &AMyGameMode::AfterResizeNextTick);
-        GetWorldTimerManager().SetTimer(SaveTimerHandle, this, &AMyGameMode::SaveWorld, 1800.0f, true);
-        UE_LOG(LogTemp, Log, TEXT("WorldManager inizializzato correttamente in MappaEsterna. BaseDataPath=%s FitTarget=%s UserMapSize=%s"),
-            *WorldManager->BaseDataPath,
-            *FitTarget.ToString(),
-            *GI->UserMapSize.ToString());
+        UE_LOG(LogTemp, Error, TEXT("InitAfterMapReady: GameInstance nulla"));
+        return;
     }
+    if (!WorldManager)
+    {
+        WorldManager = NewObject<UWorldStateManager>(this);
+    }
+    if (!WorldManager)
+    {
+        UE_LOG(LogTemp, Error, TEXT("InitAfterMapReady: impossibile creare WorldManager"));
+        return;
+    }
+    SetupWorldManagerPaths(GI);
+    WorldManager->BaseDataPath = GI->SavedBaseDataPath;
+    WorldManager->EntityRegistryAsset = RegistryConfig;
+    WorldManager->Initialize(GetWorld());
+    const FVector FitTarget = WorldManager->ComputeTargetSizeFromEntitiesJson(200.f);
+    if (GI->UserMapSize.X > 0.f && GI->UserMapSize.Y > 0.f)
+    {
+        UE_LOG(LogTemp, Warning,
+            TEXT("InitAfterMapReady: uso UserMapSize=%s"),
+            *GI->UserMapSize.ToString());
+
+        WorldManager->ResizeLandscape(GI->UserMapSize);
+    }
+    else if (FitTarget.X > 0.f && FitTarget.Y > 0.f)
+    {
+        UE_LOG(LogTemp, Warning,
+            TEXT("InitAfterMapReady: uso FitTarget=%s"),
+            *FitTarget.ToString());
+
+        WorldManager->ResizeLandscape(FitTarget);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning,
+            TEXT("InitAfterMapReady: nessun target valido, aggiorno solo i bounds"));
+
+        WorldManager->UpdateLandscapeBounds();
+    }
+    GetWorldTimerManager().SetTimerForNextTick(this, &AMyGameMode::AfterResizeNextTick);
+    GetWorldTimerManager().SetTimer(SaveTimerHandle, this, &AMyGameMode::SaveWorld, 1800.0f, true);
+    UE_LOG(LogTemp, Warning,
+        TEXT("InitAfterMapReady: END | BaseDataPath=%s | FitTarget=%s | UserMapSize=%s"),
+        *WorldManager->BaseDataPath,
+        *FitTarget.ToString(),
+        *GI->UserMapSize.ToString());
 }
 
 void AMyGameMode::SetupWorldManagerPaths(UMCGameInstance* GI)
@@ -77,13 +108,19 @@ void AMyGameMode::SaveWorld()
 
 void AMyGameMode::Load()
 {
-    if (WorldManager)
+    if (!WorldManager)
     {
-        UE_LOG(LogTemp, Warning, TEXT("--- LOAD JSON STARTED ---"));
-        WorldManager->RemoveOldInstances();
-        WorldManager->LoadEnvironment();
-        WorldManager->LoadEntities();
+        UE_LOG(LogTemp, Error, TEXT("Load: WorldManager nullo"));
+        return;
     }
+    UE_LOG(LogTemp, Warning,
+        TEXT("--- LOAD JSON STARTED --- World=%s Level=%s"),
+        *GetWorld()->GetName(),
+        *UGameplayStatics::GetCurrentLevelName(this, true));
+    WorldManager->RemoveOldInstances();
+    WorldManager->LoadEnvironment();
+    WorldManager->LoadEntities();
+    UE_LOG(LogTemp, Warning, TEXT("--- LOAD JSON FINISHED ---"));
 }
 
 void AMyGameMode::ResizeMap(UMCGameInstance* GI) {

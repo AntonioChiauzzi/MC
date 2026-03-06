@@ -10,19 +10,19 @@ class MC_API UMCGameInstance : public UGameInstance
 
 public:
     UPROPERTY(BlueprintReadWrite, Category = "Setup")
-    FString SavedBaseDataPath;
+    FString SavedBaseDataPath = "";
 
     UPROPERTY(BlueprintReadWrite, Category = "Setup")
-    FString SavedMapPath;
+    FString SavedMapPath = "";
 
     UPROPERTY(BlueprintReadWrite, Category = "Setup")
     float UserRefreshRate = 60.0f;
 
     UPROPERTY(BlueprintReadWrite, Category = "Setup")
-    FVector UserMapSize = FVector(0.f, 0.f, 0.f);
+    FVector UserMapSize = FVector(10000.f, 10000.f, 0.f);
 
     UPROPERTY(BlueprintReadWrite, Category = "Setup")
-    FString SavedDynamicGltfPath;
+    FString SavedDynamicGltfPath = "";
 
     UFUNCTION(BlueprintCallable)
     void UploadMap();

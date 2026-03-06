@@ -168,48 +168,82 @@ void UWorldStateManager::ResizeLandscape(const FVector TargetSize)
         UE_LOG(LogTemp, Error, TEXT("ResizeLandscape: World nullo"));
         return;
     }
-    ALandscapeProxy* Landscape = nullptr;
+    TArray<ALandscapeProxy*> LandscapeProxies;
+    FBox TotalBounds(ForceInit);
     for (TActorIterator<ALandscapeProxy> It(World); It; ++It)
     {
-        Landscape = *It;
-        break;
+        ALandscapeProxy* LP = *It;
+        if (LP)
+        {
+            LandscapeProxies.Add(LP);
+            TotalBounds += LP->GetComponentsBoundingBox(true);
+
+            UE_LOG(LogTemp, Warning, TEXT("ResizeLandscape: Found LandscapeProxy %s  Scale=%s"),
+                *LP->GetName(),
+                *LP->GetActorScale3D().ToString());
+        }
     }
-    if (!Landscape)
+    if (LandscapeProxies.Num() == 0)
     {
         UE_LOG(LogTemp, Error, TEXT("ResizeLandscape: nessun LandscapeProxy trovato"));
         return;
     }
-    const FBox BoundsBefore = Landscape->GetComponentsBoundingBox(true);
-    const FVector SizeBefore = BoundsBefore.GetSize();
+    if (!TotalBounds.IsValid)
+    {
+        UE_LOG(LogTemp, Error, TEXT("ResizeLandscape: TotalBounds non validi"));
+        return;
+    }
+    const FVector SizeBefore = TotalBounds.GetSize();
     if (SizeBefore.X <= KINDA_SMALL_NUMBER || SizeBefore.Y <= KINDA_SMALL_NUMBER)
     {
         UE_LOG(LogTemp, Error, TEXT("ResizeLandscape: bounds invalidi (%s)"), *SizeBefore.ToString());
         return;
     }
-    const FVector OldScale = Landscape->GetActorScale3D();
+    const FVector OldScale = LandscapeProxies[0]->GetActorScale3D();
     FVector NewScale = OldScale;
-    if (TargetSize.X > 0.f) NewScale.X = OldScale.X * (TargetSize.X / SizeBefore.X);
-    if (TargetSize.Y > 0.f) NewScale.Y = OldScale.Y * (TargetSize.Y / SizeBefore.Y);
+    if (TargetSize.X > 0.f)
+    {
+        NewScale.X = OldScale.X * (TargetSize.X / SizeBefore.X);
+    }
+    if (TargetSize.Y > 0.f)
+    {
+        NewScale.Y = OldScale.Y * (TargetSize.Y / SizeBefore.Y);
+    }
     NewScale.Z = OldScale.Z;
-    UE_LOG(LogTemp, Warning, TEXT("ResizeLandscape BEFORE: Size=%s Scale=%s  Target=%s"),
-        *SizeBefore.ToString(), *OldScale.ToString(), *TargetSize.ToString());
-    Landscape->SetActorScale3D(NewScale);
-    Landscape->MarkComponentsRenderStateDirty();
-    Landscape->ForceNetUpdate();
-    const FBox BoundsAfter = Landscape->GetComponentsBoundingBox(true);
-    const FVector SizeAfter = BoundsAfter.GetSize();
-    const FVector CenterAfter = BoundsAfter.GetCenter();
+    UE_LOG(LogTemp, Warning,
+        TEXT("ResizeLandscape BEFORE: Size=%s  OldScale=%s  Target=%s  NewScale=%s"),
+        *SizeBefore.ToString(),
+        *OldScale.ToString(),
+        *TargetSize.ToString(),
+        *NewScale.ToString()
+    );
+    for (ALandscapeProxy* LP : LandscapeProxies)
+    {
+        if (!LP)
+            continue;
+        LP->SetActorScale3D(NewScale);
+        LP->MarkComponentsRenderStateDirty();
+        LP->ReregisterAllComponents();
+        UE_LOG(LogTemp, Warning, TEXT("ResizeLandscape: Applied scale to %s  NewScale=%s"),
+            *LP->GetName(),
+            *LP->GetActorScale3D().ToString());
+    }
+    UpdateLandscapeBounds();
+    const FVector CenterAfter = (MinBound + MaxBound) * 0.5f;
     WorldOffset = FVector(-CenterAfter.X, -CenterAfter.Y, 0.f);
-    UE_LOG(LogTemp, Warning, TEXT("ResizeLandscape AFTER:  Size=%s Scale=%s  Center=%s  WorldOffset=%s"),
+    const FVector SizeAfter = MaxBound - MinBound;
+    UE_LOG(LogTemp, Warning,
+        TEXT("ResizeLandscape AFTER: Size=%s  Center=%s  WorldOffset=%s"),
         *SizeAfter.ToString(),
-        *Landscape->GetActorScale3D().ToString(),
         *CenterAfter.ToString(),
-        *WorldOffset.ToString());
+        *WorldOffset.ToString()
+    );
 }
 
 void UWorldStateManager::UpdateLandscapeBounds()
 {
     FBox TotalBounds(ForceInit);
+
     for (TActorIterator<ALandscapeProxy> It(World); It; ++It)
     {
         if (ALandscapeProxy* LP = *It)
@@ -235,9 +269,16 @@ void UWorldStateManager::UpdateLandscapeBounds()
     }
     const FVector MinLogical = MinBound + WorldOffset;
     const FVector MaxLogical = MaxBound + WorldOffset;
-    UE_LOG(LogTemp, Log, TEXT("Confini Landscape Aggiornati: Min %s - Max %s | Logical Min %s - Max %s | WorldOffset %s"),
-        *MinBound.ToString(), *MaxBound.ToString(),
-        *MinLogical.ToString(), *MaxLogical.ToString(),
+    const FVector LogicalSize = MaxLogical - MinLogical;
+    const FVector WorldSize = MaxBound - MinBound;
+    UE_LOG(LogTemp, Log,
+        TEXT("Confini Landscape Aggiornati: Min %s - Max %s | Logical Min %s - Max %s | WorldSize %s | LogicalSize %s | WorldOffset %s"),
+        *MinBound.ToString(),
+        *MaxBound.ToString(),
+        *MinLogical.ToString(),
+        *MaxLogical.ToString(),
+        *WorldSize.ToString(),
+        *LogicalSize.ToString(),
         *WorldOffset.ToString());
 }
 
