@@ -159,8 +159,7 @@ void AMyGameMode::AfterResizeNextTick()
     Load();
     if (UMCGameInstance* GI = Cast<UMCGameInstance>(GetGameInstance()))
     {
-        const float Interval = (GI->UserRefreshRate <= 0.0f) ? 60.0f : GI->UserRefreshRate;
-
+        const float Interval = (GI->UserRefreshRate <= 0.0f) ? 20.0f : GI->UserRefreshRate;
         GetWorldTimerManager().ClearTimer(LoadTimerHandle);
         GetWorldTimerManager().SetTimer(LoadTimerHandle, this, &AMyGameMode::Load, Interval, true);
     }

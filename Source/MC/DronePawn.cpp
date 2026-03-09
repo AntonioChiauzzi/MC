@@ -12,6 +12,7 @@ void ADronePawn::BeginPlay()
 {
     Super::BeginPlay();
     ApplyAutoScalingToMesh();
+    ReadValueFromSoil();
 }
 
 void ADronePawn::Tick(float DeltaTime)
@@ -28,7 +29,6 @@ void ADronePawn::Tick(float DeltaTime)
             Move(DeltaTime);
         }
         BatteryLevel = FMath::Max(0.0f, BatteryLevel - (BatteryConsumptionRate * DeltaTime));
-        ReadValueFromSoil();
     }
     else if (BatteryLevel <= 0.0f)
     {
