@@ -5,12 +5,10 @@
 #include "WorldStateManager.generated.h"
 
 class UEntityRegistryDataAsset;
-class UMyEnvironmentState;
-class UResourceManager;
 class AActor;
 class UWorld;
 class ALandscapeProxy;
-class ALandscape; 
+class ALandscape;
 class AMyBaseActor;
 
 UCLASS()
@@ -20,13 +18,10 @@ class MC_API UWorldStateManager : public UObject
 
 public:
     void Initialize(UWorld* InWorld);
-    void LoadEnvironment();
-    void SaveEnvironment() const;
     void LoadEntities();
     void SaveEntities();
-    void OpenDirectoryDialogJson();
-    void OpenDirectoryDialogMap();
     void RemoveOldInstances();
+    void LoadAssetOverridesFromProject();
 
     UPROPERTY(EditAnywhere)
     FString BaseDataPath;
@@ -35,7 +30,6 @@ public:
     UEntityRegistryDataAsset* EntityRegistryAsset;
 
     void ResizeLandscape(const FVector TargetSize);
-
     void UpdateLandscapeBounds();
 
     UPROPERTY(VisibleAnywhere, Category = "Map Bounds")
@@ -59,23 +53,16 @@ public:
     FVector ComputeTargetSizeFromEntitiesJson(float Margin = 0.f) const;
 
 private:
-    UWorld* World;
+    UWorld* World = nullptr;
 
     UPROPERTY()
     TArray<AActor*> SpawnedEntities;
 
     UPROPERTY()
-    UMyEnvironmentState* Environment;
-
-    UPROPERTY()
-    UResourceManager* ResourceManager;
+    TMap<FString, FString> AssetOverridePathsById;
 
 protected:
     AActor* SpawnEntityFromJson(const TSharedPtr<FJsonObject>& Obj);
-
     TSharedPtr<FJsonObject> ConvertEntityToJson(AMyBaseActor* Actor);
-
-    void UpdateEnvironmentFromJson(const TSharedPtr<FJsonObject>& EnvJson);
-
-    TSharedPtr<FJsonObject> ConvertEnvironmentToJson() const;
+    void ApplyAssetOverrideIfAny(AMyBaseActor* Actor);
 };
