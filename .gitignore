@@ -46,3 +46,9 @@ Releases/
 # =====================
 .DS_Store
 Thumbs.db
+
+# =====================
+# Configuration files
+# =====================
+Launcher/asset_overrides.json
+Launcher/MCLauncher.runtimeconfig.json

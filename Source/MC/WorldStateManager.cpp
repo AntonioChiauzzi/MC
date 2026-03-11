@@ -88,7 +88,7 @@ void UWorldStateManager::LoadAssetOverridesFromProject()
 
 void UWorldStateManager::LoadEntities()
 {
-    const FString FilePath = FPaths::Combine(BaseDataPath, TEXT("entities.json"));
+    const FString FilePath = BaseDataPath;
     FString Json;
     if (!FFileHelper::LoadFileToString(Json, *FilePath))
     {
@@ -440,7 +440,7 @@ TSharedPtr<FJsonObject> UWorldStateManager::ConvertEntityToJson(AMyBaseActor* Ac
 
 FVector UWorldStateManager::ComputeTargetSizeFromEntitiesJson(float Margin) const
 {
-    const FString FilePath = FPaths::Combine(BaseDataPath, TEXT("entities.json"));
+    const FString FilePath = BaseDataPath;
     FString Json;
     if (!FFileHelper::LoadFileToString(Json, *FilePath))
     {

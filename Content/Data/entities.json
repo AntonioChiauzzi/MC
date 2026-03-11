@@ -15,7 +15,8 @@
 					"y": 70,
 					"z": 15
 				},
-				"battery": 30
+				"battery": 30,
+				"cropMaturity": 20
 			}
 		},
 		{
@@ -44,6 +45,11 @@
 				"x": -1000,
 				"y": -3000,
 				"z": 0
+			},
+			"params": {
+				"airTemperature": 20,
+    			"airHumidity": 70,
+				"windSpeed": 30
 			}
 		},
 		{
@@ -54,6 +60,18 @@
 				"x": 3000,
 				"y": 150,
 				"z": 0
+			},
+			"params": {
+				"soilTemperature": 20,
+				"soilHumidity": 70,
+				"soilSolarIrradiance": 400,
+				"soilpH": 7,
+				"soilChemicalComposition": {
+					"mineral": 45,
+					"organic": 5,
+					"air": 25,
+					"water": 25
+				}
 			}
 		},
 		{
@@ -87,6 +105,11 @@
 				"x": 2000,
 				"y": 3000,
 				"z": 0
+			},
+			"params": {
+				"airTemperature": 20,
+    			"airHumidity": 70,
+				"windSpeed": 30
 			}
 		},
 		{
@@ -115,29 +138,6 @@
 				"x": -300,
 				"y": 150,
 				"z": 0
-			},
-			"params": {
-				"speed": {
-					"x": 0,
-					"y": 0,
-					"z": 0
-				}
-			}
-		},
-		{
-			"id": "id09",
-			"type": "Dynamic",
-			"location": {
-				"x": -300,
-				"y": 150,
-				"z": 0
-			},
-			"params": {
-				"speed": {
-					"x": 0,
-					"y": 0,
-					"z": 0
-				}
 			}
 		}
 	]
