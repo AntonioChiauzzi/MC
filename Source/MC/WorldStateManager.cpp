@@ -1,9 +1,7 @@
 #include "WorldStateManager.h"
 
 #include "MCGameInstance.h"
-#include "MyEnvironmentState.h"
 #include "EntityRegistryDataAsset.h"
-#include "ResourceManager.h"
 #include "TractorPawn.h"
 #include "DronePawn.h"
 #include "HarvesterPawn.h"
@@ -20,114 +18,72 @@
 #include "HAL/FileManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "EngineUtils.h"
-#include "Landscape.h"      
+#include "Landscape.h"
 #include "LandscapeProxy.h"
 #include "Engine/SkyLight.h"
 #include "Engine/DirectionalLight.h"
 #include "Engine/ExponentialHeightFog.h"
 
 #include "Developer/DesktopPlatform/Public/IDesktopPlatform.h"
-#include "Developer/DesktopPlatform/Public/DesktopPlatformModule.h" 
-
-
+#include "Developer/DesktopPlatform/Public/DesktopPlatformModule.h"
 
 void UWorldStateManager::Initialize(UWorld* InWorld)
 {
     World = InWorld;
-    if (!ResourceManager)
+}
+
+void UWorldStateManager::LoadAssetOverridesFromProject()
+{
+    AssetOverridePathsById.Empty();
+    const FString OverrideFilePath = FPaths::ConvertRelativePathToFull(
+        FPaths::ProjectDir() / TEXT("Launcher/asset_overrides.json"));
+
+    if (!FPaths::FileExists(OverrideFilePath))
     {
-        ResourceManager = NewObject<UResourceManager>(this);
-        if (Environment)
+        UE_LOG(LogTemp, Warning, TEXT("Asset overrides non trovato: %s"), *OverrideFilePath);
+        return;
+    }
+    FString JsonText;
+    if (!FFileHelper::LoadFileToString(JsonText, *OverrideFilePath))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Impossibile leggere asset overrides: %s"), *OverrideFilePath);
+        return;
+    }
+    TSharedPtr<FJsonObject> Root;
+    TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(JsonText);
+    if (!FJsonSerializer::Deserialize(Reader, Root) || !Root.IsValid())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("JSON asset overrides non valido: %s"), *OverrideFilePath);
+        return;
+    }
+    const TArray<TSharedPtr<FJsonValue>>* AssetsArray = nullptr;
+    if (!Root->TryGetArrayField(TEXT("assets"), AssetsArray) || !AssetsArray)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Campo 'assets' mancante in %s"), *OverrideFilePath);
+        return;
+    }
+    for (const TSharedPtr<FJsonValue>& Value : *AssetsArray)
+    {
+        const TSharedPtr<FJsonObject> Obj = Value->AsObject();
+        if (!Obj.IsValid())
         {
-            ResourceManager->EnvState = Environment;
+            continue;
         }
-    }
-}
-
-
-void UWorldStateManager::LoadEnvironment()
-{
-    const FString FilePath = FPaths::Combine(BaseDataPath, TEXT("environment.json"));
-
-    FString JsonString;
-    if (!FFileHelper::LoadFileToString(JsonString, *FilePath)) return;
-
-    TSharedPtr<FJsonObject> RootJson;
-    if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(JsonString), RootJson) || !RootJson.IsValid()) return;
-
-    TSharedPtr<FJsonObject> EnvJson = RootJson->GetObjectField(TEXT("environment"));
-    if (EnvJson.IsValid())
-    {
-        UpdateEnvironmentFromJson(EnvJson);
-        UE_LOG(LogTemp, Log, TEXT("Environment loaded correctly from: %s"), *FilePath);
-    }
-}
-
-void UWorldStateManager::UpdateEnvironmentFromJson(const TSharedPtr<FJsonObject>& EnvJson)
-{
-    if (!Environment)
-    {
-        Environment = NewObject<UMyEnvironmentState>(this);
-    }
-    EnvJson->TryGetNumberField(TEXT("soilTemperature"), Environment->SoilTemperature);
-    EnvJson->TryGetNumberField(TEXT("soilHumidity"), Environment->SoilHumidity);
-    EnvJson->TryGetNumberField(TEXT("soilSolarIrradiance"), Environment->SoilSolarIrradiance);
-    EnvJson->TryGetNumberField(TEXT("soilpH"), Environment->SoilpH);
-    EnvJson->TryGetNumberField(TEXT("cropMaturity"), Environment->cropMaturity);
-    EnvJson->TryGetNumberField(TEXT("windSpeed"), Environment->WindSpeed);
-    EnvJson->TryGetNumberField(TEXT("airTemperature"), Environment->AirTemperature);
-    EnvJson->TryGetNumberField(TEXT("airHumidity"), Environment->AirHumidity);
-    Environment->SoilChemicalComposition.Empty();
-    const TSharedPtr<FJsonObject>* ChemJson;
-    if (EnvJson->TryGetObjectField(TEXT("soilChemicalComposition"), ChemJson))
-    {
-        for (const auto& Elem : (*ChemJson)->Values)
+        FString Id;
+        FString Path;
+        Obj->TryGetStringField(TEXT("id"), Id);
+        Obj->TryGetStringField(TEXT("path"), Path);
+        if (Id.IsEmpty() || Path.IsEmpty())
         {
-            Environment->SoilChemicalComposition.Add(Elem.Key, Elem.Value->AsNumber());
+            continue;
         }
+        AssetOverridePathsById.Add(Id, Path);
+        UE_LOG(LogTemp, Log,
+            TEXT("Asset override registrato | Id=%s | Path=%s"),
+            *Id,
+            *Path);
     }
-}
-
-void UWorldStateManager::SaveEnvironment() const
-{
-    if (!Environment) return;
-    FString PathToUse = BaseDataPath;
-    if (UMCGameInstance* GI = Cast<UMCGameInstance>(GetWorld()->GetGameInstance()))
-    {
-        if (!GI->SavedBaseDataPath.IsEmpty()) PathToUse = GI->SavedBaseDataPath;
-    }
-
-    if (PathToUse.IsEmpty()) return;
-    TSharedPtr<FJsonObject> RootJson = MakeShared<FJsonObject>();
-    RootJson->SetObjectField("environment", ConvertEnvironmentToJson());
-    FString OutputString;
-    TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&OutputString);
-    if (FJsonSerializer::Serialize(RootJson.ToSharedRef(), Writer))
-    {
-        const FString FilePath = FPaths::Combine(PathToUse, TEXT("environment.json"));
-        FFileHelper::SaveStringToFile(OutputString, *FilePath);
-        UE_LOG(LogTemp, Log, TEXT("Environment salvato correttamente in: %s"), *FilePath);
-    }
-}
-
-TSharedPtr<FJsonObject> UWorldStateManager::ConvertEnvironmentToJson() const
-{
-    TSharedPtr<FJsonObject> EnvJson = MakeShared<FJsonObject>();
-    EnvJson->SetNumberField("airTemperature", Environment->AirTemperature);
-    EnvJson->SetNumberField("airHumidity", Environment->AirHumidity);
-    EnvJson->SetNumberField("windSpeed", Environment->WindSpeed);
-    EnvJson->SetNumberField("soilTemperature", Environment->SoilTemperature);
-    EnvJson->SetNumberField("soilHumidity", Environment->SoilHumidity);
-    EnvJson->SetNumberField("soilSolarIrradiance", Environment->SoilSolarIrradiance);
-    EnvJson->SetNumberField("soilpH", Environment->SoilpH);
-    EnvJson->SetNumberField("cropMaturity", Environment->cropMaturity);
-    TSharedPtr<FJsonObject> ChemJson = MakeShared<FJsonObject>();
-    for (const auto& Elem : Environment->SoilChemicalComposition)
-    {
-        ChemJson->SetNumberField(Elem.Key, Elem.Value);
-    }
-    EnvJson->SetObjectField("soilChemicalComposition", ChemJson);
-    return EnvJson;
+    UE_LOG(LogTemp, Warning, TEXT("Asset overrides caricati: %d"), AssetOverridePathsById.Num());
 }
 
 void UWorldStateManager::LoadEntities()
@@ -135,28 +91,38 @@ void UWorldStateManager::LoadEntities()
     const FString FilePath = FPaths::Combine(BaseDataPath, TEXT("entities.json"));
     FString Json;
     if (!FFileHelper::LoadFileToString(Json, *FilePath))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("LoadEntities: impossibile leggere %s"), *FilePath);
         return;
+    }
     TSharedPtr<FJsonObject> Root;
     if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json), Root) || !Root.IsValid())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("LoadEntities: JSON non valido in %s"), *FilePath);
         return;
-    const TArray<TSharedPtr<FJsonValue>>* Arr;
+    }
+    const TArray<TSharedPtr<FJsonValue>>* Arr = nullptr;
     if (!Root->TryGetArrayField(TEXT("entities"), Arr))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("LoadEntities: campo 'entities' mancante in %s"), *FilePath);
         return;
+    }
     for (const auto& V : *Arr)
     {
         const TSharedPtr<FJsonObject> Obj = V->AsObject();
         if (!Obj.IsValid())
+        {
             continue;
+        }
         const FString Type = Obj->GetStringField(TEXT("type"));
         if (!EntityRegistryAsset || !EntityRegistryAsset->EntityMappings.Contains(Type))
+        {
+            UE_LOG(LogTemp, Warning, TEXT("LoadEntities: type non registrato: %s"), *Type);
             continue;
+        }
         if (AActor* NewActor = SpawnEntityFromJson(Obj))
         {
             SpawnedEntities.Add(NewActor);
-            if (ResourceManager)
-            {
-                ResourceManager->ManagedEntities.Add(NewActor);
-            }
         }
     }
 }
@@ -170,6 +136,7 @@ void UWorldStateManager::ResizeLandscape(const FVector TargetSize)
     }
     TArray<ALandscapeProxy*> LandscapeProxies;
     FBox TotalBounds(ForceInit);
+
     for (TActorIterator<ALandscapeProxy> It(World); It; ++It)
     {
         ALandscapeProxy* LP = *It;
@@ -220,7 +187,9 @@ void UWorldStateManager::ResizeLandscape(const FVector TargetSize)
     for (ALandscapeProxy* LP : LandscapeProxies)
     {
         if (!LP)
+        {
             continue;
+        }
         LP->SetActorScale3D(NewScale);
         LP->MarkComponentsRenderStateDirty();
         LP->ReregisterAllComponents();
@@ -282,17 +251,41 @@ void UWorldStateManager::UpdateLandscapeBounds()
         *WorldOffset.ToString());
 }
 
+void UWorldStateManager::ApplyAssetOverrideIfAny(AMyBaseActor* Actor)
+{
+    if (!Actor || Actor->ID.IsEmpty())
+    {
+        return;
+    }
+    const FString* FoundPath = AssetOverridePathsById.Find(Actor->ID);
+    if (!FoundPath)
+    {
+        return;
+    }
+    Actor->bHasAssetOverride = true;
+    Actor->RuntimeOverrideAssetPath = *FoundPath;
+    const FString& Path = *FoundPath;
+    UE_LOG(LogTemp, Warning,
+        TEXT("Override trovato per %s | Path=%s"),
+        *Actor->ID,
+        *Path);
+}
+
 AActor* UWorldStateManager::SpawnEntityFromJson(const TSharedPtr<FJsonObject>& Obj)
 {
-    FString Type = Obj->GetStringField(TEXT("type"));
+    const FString Type = Obj->GetStringField(TEXT("type"));
     if (!EntityRegistryAsset || !EntityRegistryAsset->EntityMappings.Contains(Type))
+    {
         return nullptr;
+    }
     TSubclassOf<AActor> ClassToSpawn = EntityRegistryAsset->EntityMappings[Type].ActorClass;
     if (!World || !*ClassToSpawn)
+    {
         return nullptr;
+    }
     const FVector MinLogical = MinBound + WorldOffset;
     const FVector MaxLogical = MaxBound + WorldOffset;
-    auto LocObj = Obj->GetObjectField(TEXT("location"));
+    const TSharedPtr<FJsonObject> LocObj = Obj->GetObjectField(TEXT("location"));
     const FVector LocLogical(
         LocObj->GetNumberField(TEXT("x")),
         LocObj->GetNumberField(TEXT("y")),
@@ -307,7 +300,10 @@ AActor* UWorldStateManager::SpawnEntityFromJson(const TSharedPtr<FJsonObject>& O
     }
     const FVector LocWorld = ApplyWorldOffset_LogicalToWorld(LocLogical);
     AActor* A = World->SpawnActor<AActor>(ClassToSpawn, LocWorld, FRotator::ZeroRotator);
-    if (!A) return nullptr;
+    if (!A)
+    {
+        return nullptr;
+    }
     if (AMyBaseActor* MyBaseActor = Cast<AMyBaseActor>(A))
     {
         MyBaseActor->ID = Obj->GetStringField(TEXT("id"));
@@ -315,6 +311,8 @@ AActor* UWorldStateManager::SpawnEntityFromJson(const TSharedPtr<FJsonObject>& O
         MyBaseActor->MapMin = MinLogical;
         MyBaseActor->MapMax = MaxLogical;
         MyBaseActor->WorldOffset = WorldOffset;
+
+        ApplyAssetOverrideIfAny(MyBaseActor);
 
 #if WITH_EDITOR
         A->SetActorLabel(MyBaseActor->Name);
@@ -324,7 +322,7 @@ AActor* UWorldStateManager::SpawnEntityFromJson(const TSharedPtr<FJsonObject>& O
     const TSharedPtr<FJsonObject>* TargetObjPtr;
     if (Obj->TryGetObjectField(TEXT("targetLocation"), TargetObjPtr) && TargetObjPtr && TargetObjPtr->IsValid())
     {
-        auto TargetObj = *TargetObjPtr;
+        const TSharedPtr<FJsonObject> TargetObj = *TargetObjPtr;
         const FVector TargetLogical(
             TargetObj->GetNumberField(TEXT("x")),
             TargetObj->GetNumberField(TEXT("y")),
@@ -340,42 +338,40 @@ AActor* UWorldStateManager::SpawnEntityFromJson(const TSharedPtr<FJsonObject>& O
     {
         Configurable->ConfigureFromJson(Obj);
     }
-    if (A->Implements<UEnvironmentInjectable>())
-        IEnvironmentInjectable::Execute_SetEnvironment(A, Environment);
-    if (A->Implements<UEnvironmentReader>())
-        IEnvironmentReader::Execute_ReadEnvironment(A, Environment);
     return A;
 }
 
 void UWorldStateManager::RemoveOldInstances()
 {
-    for (AActor* Actor : SpawnedEntities) {
-        if (Actor && Actor->IsValidLowLevel()) {
+    for (AActor* Actor : SpawnedEntities)
+    {
+        if (Actor && Actor->IsValidLowLevel())
+        {
             Actor->Destroy();
         }
     }
     SpawnedEntities.Empty();
-    if (ResourceManager)
-    {
-        for (AActor* Actor : ResourceManager->ManagedEntities) {
-            if (Actor && Actor->IsValidLowLevel()) {
-                Actor->Destroy();
-            }
-        }
-        ResourceManager->ManagedEntities.Empty();
-    }
     UE_LOG(LogTemp, Warning, TEXT("Entità distrutte"));
 }
 
 void UWorldStateManager::SaveEntities()
 {
-    if (!World) return;
+    if (!World)
+    {
+        return;
+    }
     FString PathToUse = BaseDataPath;
     if (UMCGameInstance* GI = Cast<UMCGameInstance>(World->GetGameInstance()))
     {
-        if (!GI->SavedBaseDataPath.IsEmpty()) PathToUse = GI->SavedBaseDataPath;
+        if (!GI->SavedBaseDataPath.IsEmpty())
+        {
+            PathToUse = GI->SavedBaseDataPath;
+        }
     }
-    if (PathToUse.IsEmpty()) return;
+    if (PathToUse.IsEmpty())
+    {
+        return;
+    }
     TSharedPtr<FJsonObject> RootObject = MakeShared<FJsonObject>();
     TArray<TSharedPtr<FJsonValue>> EntitiesArray;
     for (TActorIterator<AMyBaseActor> It(World); It; ++It)
@@ -418,9 +414,18 @@ TSharedPtr<FJsonObject> UWorldStateManager::ConvertEntityToJson(AMyBaseActor* Ac
         EntityObj->SetObjectField(TEXT("params"), Params);
     }
     TOptional<FVector> CurrentTargetWorld;
-    if (ATractorPawn* Tractor = Cast<ATractorPawn>(Actor)) CurrentTargetWorld = Tractor->TargetLocation;
-    else if (ADronePawn* Drone = Cast<ADronePawn>(Actor)) CurrentTargetWorld = Drone->TargetLocation;
-    else if (AHarvesterPawn* Harvester = Cast<AHarvesterPawn>(Actor)) CurrentTargetWorld = Harvester->TargetLocation;
+    if (ATractorPawn* Tractor = Cast<ATractorPawn>(Actor))
+    {
+        CurrentTargetWorld = Tractor->TargetLocation;
+    }
+    else if (ADronePawn* Drone = Cast<ADronePawn>(Actor))
+    {
+        CurrentTargetWorld = Drone->TargetLocation;
+    }
+    else if (AHarvesterPawn* Harvester = Cast<AHarvesterPawn>(Actor))
+    {
+        CurrentTargetWorld = Harvester->TargetLocation;
+    }
     if (CurrentTargetWorld.IsSet())
     {
         const FVector TargetLogical = CurrentTargetWorld.GetValue() + Actor->WorldOffset;
@@ -460,7 +465,9 @@ FVector UWorldStateManager::ComputeTargetSizeFromEntitiesJson(float Margin) cons
     {
         const TSharedPtr<FJsonObject> Obj = V->AsObject();
         if (!Obj.IsValid() || !Obj->HasField(TEXT("location")))
+        {
             continue;
+        }
         const TSharedPtr<FJsonObject> LocObj = Obj->GetObjectField(TEXT("location"));
         const double X = LocObj->GetNumberField(TEXT("x"));
         const double Y = LocObj->GetNumberField(TEXT("y"));
@@ -472,57 +479,4 @@ FVector UWorldStateManager::ComputeTargetSizeFromEntitiesJson(float Margin) cons
     UE_LOG(LogTemp, Warning, TEXT("FitToData: MaxAbsX=%.2f MaxAbsY=%.2f => TargetSize X=%.2f Y=%.2f (Margin=%.2f)"),
         float(MaxAbsX), float(MaxAbsY), TargetX, TargetY, Margin);
     return FVector(TargetX, TargetY, 0.f);
-}
-
-void UWorldStateManager::OpenDirectoryDialogJson()
-{
-    IDesktopPlatform* DesktopPlatform = FDesktopPlatformModule::Get();
-    FString SelectedDirectory;
-    if (DesktopPlatform)
-    {
-        bool bOpened = DesktopPlatform->OpenDirectoryDialog(
-            nullptr,
-            TEXT("Seleziona la cartella dei JSON (Annulla per usare Content/Data)"),
-            FPaths::ProjectContentDir(),
-            SelectedDirectory
-        );
-        if (!bOpened || SelectedDirectory.IsEmpty())
-        {
-            SelectedDirectory = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Data"));
-            UE_LOG(LogTemp, Warning, TEXT("Dialog JSON annullato. Uso fallback: %s"), *SelectedDirectory);
-        }
-    }
-    if (UMCGameInstance* GI = Cast<UMCGameInstance>(GetWorld()->GetGameInstance()))
-    {
-        FPaths::NormalizeDirectoryName(SelectedDirectory);
-        GI->SavedBaseDataPath = SelectedDirectory;
-        BaseDataPath = SelectedDirectory;
-        UE_LOG(LogTemp, Log, TEXT("SavedBaseDataPath impostato a: %s"), *GI->SavedBaseDataPath);
-    }
-}
-
-void UWorldStateManager::OpenDirectoryDialogMap()
-{
-    IDesktopPlatform* DesktopPlatform = FDesktopPlatformModule::Get();
-    FString SelectedDirectory;
-    if (DesktopPlatform)
-    {
-        bool bOpened = DesktopPlatform->OpenDirectoryDialog(
-            nullptr,
-            TEXT("Seleziona la cartella contenente la Mappa (Annulla per caricare NewMap di default)"),
-            FPaths::ProjectContentDir(),
-            SelectedDirectory
-        );
-        if (!bOpened || SelectedDirectory.IsEmpty())
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Dialog annullato. Utilizzo percorso di default: Content/"));
-            SelectedDirectory = FPaths::ProjectContentDir();
-        }
-    }
-    if (UMCGameInstance* GI = Cast<UMCGameInstance>(GetWorld()->GetGameInstance()))
-    {
-        FPaths::NormalizeDirectoryName(SelectedDirectory);
-        GI->SavedMapPath = SelectedDirectory;
-        UE_LOG(LogTemp, Log, TEXT("SavedMapPath impostato a: %s"), *GI->SavedMapPath);
-    }
 }

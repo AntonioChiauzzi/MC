@@ -11,6 +11,7 @@ void AMyBaseActor::BeginPlay()
 {
     Super::BeginPlay();
     SpawnLocation = GetActorLocation();
+
     TArray<UPrimitiveComponent*> PrimComps;
     GetComponents<UPrimitiveComponent>(PrimComps);
     for (UPrimitiveComponent* C : PrimComps)
@@ -24,8 +25,7 @@ void AMyBaseActor::BeginPlay()
 
 void AMyBaseActor::Tick(float DeltaTime)
 {
-	Super::Tick(DeltaTime);
-
+    Super::Tick(DeltaTime);
 }
 
 FString AMyBaseActor::GetEntityId()

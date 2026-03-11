@@ -2,30 +2,32 @@
 
 #include "CoreMinimal.h"
 #include "MyBaseActor.h"
-#include "EnvironmentReader.h"
+#include "EntityConfigurable.h"
 #include "GroundSensorActor.generated.h"
 
 class UMyEnvironmentState;
 
 UCLASS()
-class MC_API AGroundSensorActor : public AMyBaseActor, public IEnvironmentReader
+class MC_API AGroundSensorActor : public AMyBaseActor, public IEntityConfigurable
 {
     GENERATED_BODY()
 
 public:
     AGroundSensorActor();
 
+    virtual void ConfigureFromJson(const TSharedPtr<FJsonObject>& Json) override;
+    virtual void SaveToJson(const TSharedPtr<FJsonObject>& Json) override;
+
     virtual FString GetEntityType() const override;
 
-    virtual void ReadEnvironment_Implementation(const UMyEnvironmentState* Environment) override;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Visuals")
+    FVector MaxDimensions = FVector(100.f, 100.f, 100.f);
+
+    UFUNCTION(BlueprintCallable)
+    void ApplyAutoScalingToMesh();
 
 protected:
     virtual void BeginPlay() override;
-
-    UFUNCTION(BlueprintCallable)
-        void timerAction();
-
-    FTimerHandle TimerHandle_Action;
 
     UPROPERTY(VisibleAnywhere, Category = "Soil Readings", meta = (DisplayName = "Soil pH"))
     float SoilpH;
@@ -41,7 +43,4 @@ protected:
 
     UPROPERTY(VisibleAnywhere, Category = "Soil Readings")
     TMap<FString, float> SoilChemicalComposition;
-
-    UPROPERTY(EditAnywhere, Category = "Environment")
-    UMyEnvironmentState* EnvironmentState;
 };
