@@ -1,4 +1,5 @@
 #include "DronePawn.h"
+#include "MyEnvironmentState.h"
 #include "Components/StaticMeshComponent.h"
 
 ADronePawn::ADronePawn()
@@ -11,6 +12,7 @@ void ADronePawn::BeginPlay()
 {
     Super::BeginPlay();
     ApplyAutoScalingToMesh();
+    ReadValueFromSoil();
 }
 
 void ADronePawn::Tick(float DeltaTime)
@@ -98,10 +100,6 @@ void ADronePawn::ConfigureFromJson(const TSharedPtr<FJsonObject>& Json)
     {
         BatteryLevel = 100.0f;
     }
-    if (!(*Params)->TryGetNumberField(TEXT("cropMaturity"), BatteryLevel))
-    {
-        CropMaturity = 0.0f;
-    }
 }
 
 void ADronePawn::SaveToJson(const TSharedPtr<FJsonObject>& Json)
@@ -112,27 +110,40 @@ void ADronePawn::SaveToJson(const TSharedPtr<FJsonObject>& Json)
     SpeedObj->SetNumberField(TEXT("z"), Velocity.Z);
     Json->SetObjectField(TEXT("speed"), SpeedObj);
     Json->SetNumberField(TEXT("battery"), BatteryLevel);
-    Json->SetNumberField(TEXT("cropMaturity"), CropMaturity);
 }
 
 FString ADronePawn::GetEntityType() const { return TEXT("Drone"); }
 
+void ADronePawn::SetEnvironment_Implementation(UMyEnvironmentState* InEnvironment)
+{
+    Environment = InEnvironment;
+}
+
+void ADronePawn::ReadValueFromSoil()
+{
+    if (IsValid(Environment))
+    {
+        UE_LOG(LogTemp, Log, TEXT("Drone Scan - Crop Maturity: %f"), Environment->cropMaturity);
+    }
+}
+
 void ADronePawn::ApplyAutoScalingToMesh()
 {
-    USceneComponent* RootToScale = GetRootComponent();
-    FVector Origin, BoxExtent;
-    GetActorBounds(true, Origin, BoxExtent);
-    FVector TotalSize = BoxExtent * 2.0f;
-    if (TotalSize.X > 1.0f)
+    TArray<UStaticMeshComponent*> MeshComps;
+    GetComponents<UStaticMeshComponent>(MeshComps);
+    for (UStaticMeshComponent* CurrentMesh : MeshComps)
     {
-        float ScaleX = MaxDimensions.X / TotalSize.X;
-        float ScaleY = MaxDimensions.Y / TotalSize.Y;
-        float ScaleZ = MaxDimensions.Z / TotalSize.Z;
-        float UniformScale = FMath::Min3(ScaleX, ScaleY, ScaleZ);
-        if (RootToScale)
+        if (CurrentMesh && CurrentMesh->GetStaticMesh())
         {
-            RootToScale->SetRelativeScale3D(FVector(UniformScale));
-            UE_LOG(LogTemp, Warning, TEXT("Harvester intero scalato a: %f"), UniformScale);
+            FVector RawSize = CurrentMesh->GetStaticMesh()->GetBoundingBox().GetSize();
+            if (RawSize.X > 1.0f)
+            {
+                float ScaleX = MaxDimensions.X / RawSize.X;
+                float ScaleY = MaxDimensions.Y / RawSize.Y;
+                float ScaleZ = MaxDimensions.Z / RawSize.Z;
+                float UniformScale = FMath::Min3(ScaleX, ScaleY, ScaleZ);
+                CurrentMesh->SetRelativeScale3D(FVector(UniformScale));
+            }
         }
     }
 }

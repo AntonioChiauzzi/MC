@@ -2,39 +2,40 @@
 
 #include "CoreMinimal.h"
 #include "MyBaseActor.h"
-#include "EntityConfigurable.h"
+#include "EnvironmentReader.h"
 #include "WeatherStationActor.generated.h"
 
+class UMyEnvironmentState;
 
 UCLASS()
-class MC_API AWeatherStationActor : public AMyBaseActor, public IEntityConfigurable
+class MC_API AWeatherStationActor : public AMyBaseActor, public IEnvironmentReader
 {
     GENERATED_BODY()
 
 public:
     AWeatherStationActor();
 
-    virtual void ConfigureFromJson(const TSharedPtr<FJsonObject>& Json) override;
-    virtual void SaveToJson(const TSharedPtr<FJsonObject>& Json) override;
+    virtual void ReadEnvironment_Implementation(const UMyEnvironmentState* Environment) override;
 
     virtual FString GetEntityType() const override;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Visuals")
-    FVector MaxDimensions = FVector(200.f, 200.f, 200.f);
-
-    UFUNCTION(BlueprintCallable)
-    void ApplyAutoScalingToMesh();
 
 protected:
     virtual void BeginPlay() override;
 
-    UPROPERTY(VisibleAnywhere, Category = "Weather Readings")
-    float AirTemperature;
+    UFUNCTION(BlueprintCallable)
+    void timerAction();
+
+    FTimerHandle TimerHandle_Action;
 
     UPROPERTY(VisibleAnywhere, Category = "Weather Readings")
-    float AirHumidity;
+    float CurrentAirTemperature;
 
     UPROPERTY(VisibleAnywhere, Category = "Weather Readings")
-    float WindSpeed;
+    float CurrentAirHumidity;
 
+    UPROPERTY(VisibleAnywhere, Category = "Weather Readings")
+    float CurrentWindSpeed;
+
+    UPROPERTY(EditAnywhere, Category = "Environment")
+    UMyEnvironmentState* EnvironmentState;
 };

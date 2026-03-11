@@ -8,21 +8,21 @@
 UCLASS()
 class MC_API AMyBaseActor : public AActor
 {
-    GENERATED_BODY()
-
-public:
+	GENERATED_BODY()
+	
+public:	
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh")
     UStaticMeshComponent* BaseMesh;
 
-    AMyBaseActor();
+	AMyBaseActor();
 
-    UPROPERTY(VisibleAnywhere, Category = "Base Actor")
+	UPROPERTY(VisibleAnywhere, Category="Base Actor")
     FString ID;
 
     UPROPERTY(VisibleAnywhere, Category = "Base Actor")
     FString Name;
-
-    UPROPERTY(VisibleAnywhere, Category = "Base Actor")
+    
+    UPROPERTY(VisibleAnywhere, Category="Base Actor")
     FVector SpawnLocation;
 
     UPROPERTY(VisibleAnywhere, Category = "Base Actor")
@@ -34,12 +34,6 @@ public:
     UPROPERTY(VisibleAnywhere, Category = "Base Actor")
     FVector WorldOffset = FVector::ZeroVector;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Assets")
-    bool bHasAssetOverride = false;
-
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Assets")
-    FString RuntimeOverrideAssetPath;
-
     FString GetEntityId();
 
     FString GetEntityName();
@@ -49,5 +43,7 @@ public:
     virtual FString GetEntityType() const { return TEXT("BaseEntity"); }
 
 protected:
-    virtual void BeginPlay() override;
+	virtual void BeginPlay() override;
 };
+
+	

@@ -1,4 +1,5 @@
 ﻿#include "WeatherStationActor.h"
+#include "MyEnvironmentState.h"
 
 AWeatherStationActor::AWeatherStationActor()
 {
@@ -10,30 +11,17 @@ void AWeatherStationActor::BeginPlay()
     Super::BeginPlay();
 }
 
-void AWeatherStationActor::ConfigureFromJson(const TSharedPtr<FJsonObject>& Json)
+void AWeatherStationActor::ReadEnvironment_Implementation(const UMyEnvironmentState* Environment)
 {
-    const TSharedPtr<FJsonObject>* Params;
-    if (!Json->TryGetObjectField(TEXT("params"), Params)) return;
-    if (!(*Params)->TryGetNumberField(TEXT("airTemperature"), AirTemperature))
+    if (!IsValid(Environment))
     {
-        AirTemperature = 20.0f;
+        return;
     }
-    if (!(*Params)->TryGetNumberField(TEXT("airHumidity"), AirHumidity))
-    {
-        AirHumidity = 70.0f;
-    }
-    if (!(*Params)->TryGetNumberField(TEXT("windSpeed"), WindSpeed))
-    {
-        WindSpeed = 30.0f;
-    }
-}
+    CurrentAirTemperature = Environment->AirTemperature;
+    CurrentAirHumidity = Environment->AirHumidity;
+    CurrentWindSpeed = Environment->WindSpeed;
 
-void AWeatherStationActor::SaveToJson(const TSharedPtr<FJsonObject>& Json)
-{
-    TSharedPtr<FJsonObject> SpeedObj = MakeShared<FJsonObject>();
-    Json->SetNumberField(TEXT("airTemperature"), AirTemperature);
-    Json->SetNumberField(TEXT("airHumidity"), AirHumidity);
-    Json->SetNumberField(TEXT("windSpeed"), WindSpeed);
+    UE_LOG(LogTemp, Log, TEXT("Stazione Meteo '%s' aggiornata."), *GetName());
 }
 
 FString AWeatherStationActor::GetEntityType() const
@@ -41,22 +29,10 @@ FString AWeatherStationActor::GetEntityType() const
     return TEXT("WeatherStation");
 }
 
-void AWeatherStationActor::ApplyAutoScalingToMesh()
+void AWeatherStationActor::timerAction()
 {
-    USceneComponent* RootToScale = GetRootComponent();
-    FVector Origin, BoxExtent;
-    GetActorBounds(true, Origin, BoxExtent);
-    FVector TotalSize = BoxExtent * 2.0f;
-    if (TotalSize.X > 1.0f)
+    if (IsValid(EnvironmentState))
     {
-        float ScaleX = MaxDimensions.X / TotalSize.X;
-        float ScaleY = MaxDimensions.Y / TotalSize.Y;
-        float ScaleZ = MaxDimensions.Z / TotalSize.Z;
-        float UniformScale = FMath::Min3(ScaleX, ScaleY, ScaleZ);
-        if (RootToScale)
-        {
-            RootToScale->SetRelativeScale3D(FVector(UniformScale));
-            UE_LOG(LogTemp, Warning, TEXT("Harvester intero scalato a: %f"), UniformScale);
-        }
+        IEnvironmentReader::Execute_ReadEnvironment(this, EnvironmentState);
     }
 }

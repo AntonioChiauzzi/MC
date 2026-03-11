@@ -3,21 +3,20 @@
 #include "CoreMinimal.h"
 #include "MyBaseActor.h"
 #include "EntityConfigurable.h"
+#include "EnvironmentInjectable.h"
 #include "MovableVehicle.h"
 #include "DronePawn.generated.h"
 
+class UMyEnvironmentState;
 class UStaticMeshComponent;
 
 UCLASS()
-class MC_API ADronePawn : public AMyBaseActor, public IEntityConfigurable, public IMovableVehicle
+class MC_API ADronePawn : public AMyBaseActor, public IEntityConfigurable, public IEnvironmentInjectable, public IMovableVehicle
 {
     GENERATED_BODY()
 
 public:
     ADronePawn();
-
-    UPROPERTY()
-    float CropMaturity;
 
     UPROPERTY()
     FVector Velocity;
@@ -40,11 +39,17 @@ public:
     virtual void SaveToJson(const TSharedPtr<FJsonObject>& Json) override;
     virtual FString GetEntityType() const override;
 
+    virtual void SetEnvironment_Implementation(UMyEnvironmentState* InEnvironment) override;
+
     UPROPERTY(EditAnywhere, Category = "Visuals")
     FVector MaxDimensions = FVector(40.0f, 40.0f, 15.0f);
 
-    UFUNCTION(BlueprintCallable)
     void ApplyAutoScalingToMesh();
+    void ReadValueFromSoil();
+
+private:
+    UPROPERTY()
+    UMyEnvironmentState* Environment;
 
 protected:
     virtual void BeginPlay() override;
