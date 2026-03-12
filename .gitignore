@@ -51,4 +51,5 @@ Thumbs.db
 # Configuration files
 # =====================
 Launcher/asset_overrides.json
-Launcher/MCLauncher.runtimeconfig.json
+Launcher/launcher_setup.json
+Launcher/runtime_launch_config.json

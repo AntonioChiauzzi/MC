@@ -37,7 +37,7 @@ void UWorldStateManager::LoadAssetOverridesFromProject()
     AssetOverridePathsById.Empty();
     const FString OverrideFilePath = FPaths::ConvertRelativePathToFull(
         FPaths::ProjectDir() / TEXT("Launcher/asset_overrides.json"));
-
+    UE_LOG(LogTemp, Warning, TEXT("Asset overrides path risolto: %s"), *OverrideFilePath);
     if (!FPaths::FileExists(OverrideFilePath))
     {
         UE_LOG(LogTemp, Warning, TEXT("Asset overrides non trovato: %s"), *OverrideFilePath);
