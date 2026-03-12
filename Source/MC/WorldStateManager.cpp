@@ -299,7 +299,14 @@ AActor* UWorldStateManager::SpawnEntityFromJson(const TSharedPtr<FJsonObject>& O
         return nullptr;
     }
     const FVector LocWorld = ApplyWorldOffset_LogicalToWorld(LocLogical);
-    AActor* A = World->SpawnActor<AActor>(ClassToSpawn, LocWorld, FRotator::ZeroRotator);
+    const FTransform SpawnTransform(FRotator::ZeroRotator, LocWorld);
+    AActor* A = World->SpawnActorDeferred<AActor>(
+        ClassToSpawn,
+        SpawnTransform,
+        nullptr,
+        nullptr,
+        ESpawnActorCollisionHandlingMethod::AlwaysSpawn
+    );
     if (!A)
     {
         return nullptr;
@@ -338,6 +345,7 @@ AActor* UWorldStateManager::SpawnEntityFromJson(const TSharedPtr<FJsonObject>& O
     {
         Configurable->ConfigureFromJson(Obj);
     }
+    UGameplayStatics::FinishSpawningActor(A, SpawnTransform);
     return A;
 }
 
