@@ -32,9 +32,6 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
     float BatteryLevel;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Visuals")
-    FVector MaxDimensions = FVector(500.f, 500.f, 300.f);
-
     UFUNCTION(BlueprintCallable)
     void ApplyAutoScalingToMesh();
 

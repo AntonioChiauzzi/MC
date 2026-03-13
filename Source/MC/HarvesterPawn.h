@@ -38,9 +38,6 @@ public:
     UPROPERTY(EditAnywhere)
     FVector Velocity = FVector::ZeroVector;
 
-    UPROPERTY(EditAnywhere, Category = "Visuals")
-    FVector MaxDimensions = FVector(600.0f, 400.0f, 350.0f);
-
     UFUNCTION(BlueprintCallable)
     void ApplyAutoScalingToMesh();
 

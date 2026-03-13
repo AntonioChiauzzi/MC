@@ -19,9 +19,6 @@ public:
 
     virtual FString GetEntityType() const override;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Visuals")
-    FVector MaxDimensions = FVector(200.f, 200.f, 200.f);
-
     UFUNCTION(BlueprintCallable)
     void ApplyAutoScalingToMesh();
 

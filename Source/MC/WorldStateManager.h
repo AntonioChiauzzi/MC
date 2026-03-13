@@ -61,6 +61,9 @@ private:
     UPROPERTY()
     TMap<FString, FString> AssetOverridePathsById;
 
+    UPROPERTY()
+    TMap<FString, FVector> AssetOverrideDimensionsById;
+
 protected:
     AActor* SpawnEntityFromJson(const TSharedPtr<FJsonObject>& Obj);
     TSharedPtr<FJsonObject> ConvertEntityToJson(AMyBaseActor* Actor);

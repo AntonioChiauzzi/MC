@@ -16,12 +16,12 @@ ADynamicPawn::ADynamicPawn()
 	{
 		MeshComponent->SetStaticMesh(CubeMeshAsset.Object);
 	}
+	MaxDimensions = FVector(500.f, 500.f, 300.f);
 }
 
 void ADynamicPawn::BeginPlay()
 {
 	Super::BeginPlay();
-
 	FVector Origin;
 	FVector Extent;
 	GetActorBounds(true, Origin, Extent);

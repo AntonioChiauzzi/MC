@@ -5,6 +5,7 @@ ADronePawn::ADronePawn()
 {
     PrimaryActorTick.bCanEverTick = true;
     Velocity = FVector::ZeroVector;
+    MaxDimensions = FVector(40.0f, 40.0f, 15.0f);
 }
 
 void ADronePawn::BeginPlay()

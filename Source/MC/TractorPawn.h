@@ -37,9 +37,6 @@ public:
     virtual void SaveToJson(const TSharedPtr<FJsonObject>& Json) override;
     virtual FString GetEntityType() const override;
 
-    UPROPERTY(EditAnywhere, Category = "Visuals")
-    FVector MaxDimensions = FVector(350.0f, 200.0f, 250.0f);
-
     UFUNCTION(BlueprintCallable)
     void ApplyAutoScalingToMesh();
 

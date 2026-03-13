@@ -5,6 +5,7 @@ ATractorPawn::ATractorPawn()
 {
     PrimaryActorTick.bCanEverTick = true;
     Velocity = FVector::ZeroVector;
+    MaxDimensions = FVector(350.0f, 200.0f, 250.0f);
 }
 
 void ATractorPawn::BeginPlay()

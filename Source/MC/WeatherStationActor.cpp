@@ -3,6 +3,7 @@
 AWeatherStationActor::AWeatherStationActor()
 {
     PrimaryActorTick.bCanEverTick = false;
+    MaxDimensions = FVector(200.f, 200.f, 200.f);
 }
 
 void AWeatherStationActor::BeginPlay()

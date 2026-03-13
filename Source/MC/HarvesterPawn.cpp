@@ -5,6 +5,7 @@ AHarvesterPawn::AHarvesterPawn()
 {
     PrimaryActorTick.bCanEverTick = true;
     Velocity = FVector::ZeroVector;
+    MaxDimensions = FVector(600.0f, 400.0f, 350.0f);
 }
 
 void AHarvesterPawn::BeginPlay()

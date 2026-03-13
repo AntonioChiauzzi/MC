@@ -3,6 +3,7 @@
 AGroundSensorActor::AGroundSensorActor()
 {
     PrimaryActorTick.bCanEverTick = false;
+    MaxDimensions = FVector(100.f, 100.f, 100.f);
 }
 
 void AGroundSensorActor::BeginPlay()

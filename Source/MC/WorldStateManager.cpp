@@ -35,6 +35,7 @@ void UWorldStateManager::Initialize(UWorld* InWorld)
 void UWorldStateManager::LoadAssetOverridesFromProject()
 {
     AssetOverridePathsById.Empty();
+    AssetOverrideDimensionsById.Empty();
     const FString OverrideFilePath = FPaths::ConvertRelativePathToFull(
         FPaths::ProjectDir() / TEXT("Launcher/asset_overrides.json"));
     UE_LOG(LogTemp, Warning, TEXT("Asset overrides path risolto: %s"), *OverrideFilePath);
@@ -82,8 +83,30 @@ void UWorldStateManager::LoadAssetOverridesFromProject()
             TEXT("Asset override registrato | Id=%s | Path=%s"),
             *Id,
             *Path);
+        const TSharedPtr<FJsonObject>* MaxDimensionsObj = nullptr;
+        if (Obj->TryGetObjectField(TEXT("maxDimensions"), MaxDimensionsObj) &&
+            MaxDimensionsObj && MaxDimensionsObj->IsValid())        {
+            double X = 0.0;
+            double Y = 0.0;
+            double Z = 0.0;
+            const bool bHasX = (*MaxDimensionsObj)->TryGetNumberField(TEXT("x"), X);
+            const bool bHasY = (*MaxDimensionsObj)->TryGetNumberField(TEXT("y"), Y);
+            const bool bHasZ = (*MaxDimensionsObj)->TryGetNumberField(TEXT("z"), Z);
+            if (bHasX && bHasY && bHasZ && X > 0.0 && Y > 0.0 && Z > 0.0)
+            {
+                const FVector OverrideDimensions((float)X, (float)Y, (float)Z);
+                AssetOverrideDimensionsById.Add(Id, OverrideDimensions);
+                UE_LOG(LogTemp, Warning,
+                    TEXT("MaxDimensions override registrato | Id=%s | Dimensions=%s"),
+                    *Id,
+                    *OverrideDimensions.ToString());
+            }
+        }
     }
-    UE_LOG(LogTemp, Warning, TEXT("Asset overrides caricati: %d"), AssetOverridePathsById.Num());
+    UE_LOG(LogTemp, Warning,
+        TEXT("Asset overrides caricati: %d | Dimension overrides caricati: %d"),
+        AssetOverridePathsById.Num(),
+        AssetOverrideDimensionsById.Num());
 }
 
 void UWorldStateManager::LoadEntities()
@@ -269,6 +292,15 @@ void UWorldStateManager::ApplyAssetOverrideIfAny(AMyBaseActor* Actor)
         TEXT("Override trovato per %s | Path=%s"),
         *Actor->ID,
         *Path);
+    const FVector* FoundDimensions = AssetOverrideDimensionsById.Find(Actor->ID);
+    if (FoundDimensions)
+    {
+        Actor->MaxDimensions = *FoundDimensions;
+        UE_LOG(LogTemp, Warning,
+            TEXT("MaxDimensions override applicato a %s | %s"),
+            *Actor->ID,
+            *FoundDimensions->ToString());
+    }
 }
 
 AActor* UWorldStateManager::SpawnEntityFromJson(const TSharedPtr<FJsonObject>& Obj)

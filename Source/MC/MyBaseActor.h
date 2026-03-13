@@ -48,6 +48,12 @@ public:
 
     virtual FString GetEntityType() const { return TEXT("BaseEntity"); }
 
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Assets")
+    bool bHasRuntimeOverrideMaxDimensions = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Visuals")
+    FVector MaxDimensions = FVector(0.f, 0.f, 0.f);
+
 protected:
     virtual void BeginPlay() override;
 };
