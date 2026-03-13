@@ -8,6 +8,7 @@ AGroundSensorActor::AGroundSensorActor()
 void AGroundSensorActor::BeginPlay()
 {
     Super::BeginPlay();
+    ApplyAutoScalingToMesh();
 }
 
 void AGroundSensorActor::ConfigureFromJson(const TSharedPtr<FJsonObject>& Json)

@@ -17,10 +17,8 @@ static bool CopyPakToSaved(const FString& SourcePakAbs, FString& OutDestPakAbs)
 {
     const FString SafeDirAbs = FPaths::ConvertRelativePathToFull(FPaths::ProjectSavedDir() / TEXT("PaksRuntime/"));
     IFileManager::Get().MakeDirectory(*SafeDirAbs, true);
-
     const FString FileName = FPaths::GetCleanFilename(SourcePakAbs);
     OutDestPakAbs = SafeDirAbs / FileName;
-
     const uint32 CopyResult = IFileManager::Get().Copy(*OutDestPakAbs, *SourcePakAbs, true, true);
     return CopyResult == COPY_OK;
 }
@@ -30,10 +28,8 @@ void UMCGameInstance::ResetRuntimeDefaults()
     SavedBaseDataPath = TEXT("");
     SavedMapPath = TEXT("");
     SavedDynamicGltfPath = TEXT("");
-
     UserMapSize = FVector(7000.f, 7000.f, 0.f);
     UserRefreshRate = 20.0f;
-
     bLaunchConfigLoaded = false;
     bExternalMapRequested = false;
     bWorldBootstrapped = false;
@@ -42,10 +38,8 @@ void UMCGameInstance::ResetRuntimeDefaults()
 void UMCGameInstance::Init()
 {
     Super::Init();
-
     ResetRuntimeDefaults();
     bLaunchConfigLoaded = LoadRuntimeConfigFromCommandLine();
-
     UE_LOG(LogTemp, Warning,
         TEXT("MCGameInstance::Init | ConfigLoaded=%s | ExternalRequested=%s | SavedMapPath=%s | BaseDataPath=%s | UserMapSize=%s | RefreshRate=%.2f"),
         bLaunchConfigLoaded ? TEXT("true") : TEXT("false"),
@@ -67,17 +61,14 @@ bool UMCGameInstance::ShouldLoadExternalMap() const
     {
         return false;
     }
-
     if (!bExternalMapRequested)
     {
         return false;
     }
-
     if (SavedMapPath.IsEmpty())
     {
         return false;
     }
-
     const FString FullPakPath = FPaths::ConvertRelativePathToFull(SavedMapPath);
     return IFileManager::Get().FileExists(*FullPakPath);
 }
@@ -85,63 +76,51 @@ bool UMCGameInstance::ShouldLoadExternalMap() const
 bool UMCGameInstance::LoadRuntimeConfigFromCommandLine()
 {
     ResetRuntimeDefaults();
-
     FString ConfigPath;
     if (!FParse::Value(FCommandLine::Get(), TEXT("config="), ConfigPath))
     {
         UE_LOG(LogTemp, Error, TEXT("Parametro -config mancante."));
         return false;
     }
-
     ConfigPath = ConfigPath.TrimQuotes();
-
     if (ConfigPath.IsEmpty())
     {
         UE_LOG(LogTemp, Error, TEXT("Parametro -config vuoto."));
         return false;
     }
-
     if (!FPaths::FileExists(ConfigPath))
     {
         UE_LOG(LogTemp, Error, TEXT("Runtime config non trovata: %s"), *ConfigPath);
         return false;
     }
-
     FString JsonText;
     if (!FFileHelper::LoadFileToString(JsonText, *ConfigPath))
     {
         UE_LOG(LogTemp, Error, TEXT("Impossibile leggere runtime config: %s"), *ConfigPath);
         return false;
     }
-
     TSharedPtr<FJsonObject> JsonObject;
     TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(JsonText);
-
     if (!FJsonSerializer::Deserialize(Reader, JsonObject) || !JsonObject.IsValid())
     {
         UE_LOG(LogTemp, Error, TEXT("Runtime config JSON non valida."));
         return false;
     }
-
     FString Mode;
     if (!JsonObject->TryGetStringField(TEXT("Mode"), Mode) || Mode.IsEmpty())
     {
         UE_LOG(LogTemp, Error, TEXT("Runtime config: campo 'Mode' mancante o vuoto."));
         return false;
     }
-
     JsonObject->TryGetStringField(TEXT("PakPath"), SavedMapPath);
     JsonObject->TryGetStringField(TEXT("JsonPath"), SavedBaseDataPath);
     JsonObject->TryGetStringField(TEXT("AssetOverridesPath"), SavedDynamicGltfPath);
-
     double MapSizeX = 0.0;
     double MapSizeY = 0.0;
     double RefreshRate = 0.0;
-
     const bool bHasMapSizeX = JsonObject->TryGetNumberField(TEXT("MapSizeX"), MapSizeX);
     const bool bHasMapSizeY = JsonObject->TryGetNumberField(TEXT("MapSizeY"), MapSizeY);
     const bool bHasRefreshRate = JsonObject->TryGetNumberField(TEXT("RefreshRate"), RefreshRate);
-
     if (bHasMapSizeX && bHasMapSizeY && MapSizeX > 0.0 && MapSizeY > 0.0)
     {
         UserMapSize = FVector((float)MapSizeX, (float)MapSizeY, 0.f);
@@ -150,7 +129,6 @@ bool UMCGameInstance::LoadRuntimeConfigFromCommandLine()
     {
         UserMapSize = FVector(7000.f, 7000.f, 0.f);
     }
-
     if (bHasRefreshRate && RefreshRate > 0.0)
     {
         UserRefreshRate = (float)RefreshRate;
@@ -159,11 +137,9 @@ bool UMCGameInstance::LoadRuntimeConfigFromCommandLine()
     {
         UserRefreshRate = 20.0f;
     }
-
     if (Mode.Equals(TEXT("external"), ESearchCase::IgnoreCase))
     {
         bExternalMapRequested = !SavedMapPath.IsEmpty();
-
         UE_LOG(LogTemp, Warning,
             TEXT("Runtime config caricata | Mode=external | PakPath=%s | JsonPath=%s | AssetOverridesPath=%s | MapSize=%s | RefreshRate=%.2f"),
             *SavedMapPath,
@@ -171,25 +147,20 @@ bool UMCGameInstance::LoadRuntimeConfigFromCommandLine()
             *SavedDynamicGltfPath,
             *UserMapSize.ToString(),
             UserRefreshRate);
-
         return true;
     }
-
     if (Mode.Equals(TEXT("default"), ESearchCase::IgnoreCase))
     {
         bExternalMapRequested = false;
         SavedMapPath = TEXT("");
-
         UE_LOG(LogTemp, Warning,
             TEXT("Runtime config caricata | Mode=default | JsonPath=%s | AssetOverridesPath=%s | MapSize=%s | RefreshRate=%.2f"),
             *SavedBaseDataPath,
             *SavedDynamicGltfPath,
             *UserMapSize.ToString(),
             UserRefreshRate);
-
         return true;
     }
-
     UE_LOG(LogTemp, Error, TEXT("Runtime config: Mode non supportato: %s"), *Mode);
     return false;
 }
@@ -201,28 +172,22 @@ void UMCGameInstance::UploadMap()
         UE_LOG(LogTemp, Error, TEXT("SavedMapPath vuoto"));
         return;
     }
-
     const FString SourcePakAbs = FPaths::ConvertRelativePathToFull(SavedMapPath);
     UE_LOG(LogTemp, Warning, TEXT("SourcePakAbs: %s"), *SourcePakAbs);
-
     if (!IFileManager::Get().FileExists(*SourcePakAbs))
     {
         UE_LOG(LogTemp, Error, TEXT("Pak non trovato: %s"), *SourcePakAbs);
         return;
     }
-
     FString DestPakAbs;
     if (!CopyPakToSaved(SourcePakAbs, DestPakAbs))
     {
         UE_LOG(LogTemp, Error, TEXT("Copia pak fallita verso Saved. Source=%s"), *SourcePakAbs);
         return;
     }
-
     UE_LOG(LogTemp, Warning, TEXT("Pak copiato in: %s"), *DestPakAbs);
-
     IPlatformFile& CurrentPlatformFile = FPlatformFileManager::Get().GetPlatformFile();
     FPakPlatformFile* PakPlatformFile = nullptr;
-
     if (CurrentPlatformFile.GetName() == FString(TEXT("PakFile")))
     {
         PakPlatformFile = static_cast<FPakPlatformFile*>(&CurrentPlatformFile);
@@ -233,52 +198,41 @@ void UMCGameInstance::UploadMap()
         PakPlatformFile->Initialize(&CurrentPlatformFile, TEXT(""));
         FPlatformFileManager::Get().SetPlatformFile(*PakPlatformFile);
     }
-
     const int32 PakOrder = 0;
     if (!PakPlatformFile->Mount(*DestPakAbs, PakOrder))
     {
         UE_LOG(LogTemp, Error, TEXT("Mount fallito: %s"), *DestPakAbs);
         return;
     }
-
     UE_LOG(LogTemp, Warning, TEXT("Pak montato: %s"), *DestPakAbs);
-
     FCoreUObjectDelegates::PostLoadMapWithWorld.RemoveAll(this);
     FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &UMCGameInstance::OnMapLoaded);
-
     UGameplayStatics::OpenLevel(GetWorld(), FName(TEXT("/ExternalMaps/MappaEsterna")));
 }
 
 void UMCGameInstance::OnMapLoaded(UWorld* LoadedWorld)
 {
     FCoreUObjectDelegates::PostLoadMapWithWorld.RemoveAll(this);
-
     UE_LOG(LogTemp, Warning, TEXT("OnMapLoaded: World=%s  Map=%s"),
         *GetNameSafe(LoadedWorld),
         LoadedWorld ? *LoadedWorld->GetMapName() : TEXT("NULL"));
-
     if (!LoadedWorld)
     {
         return;
     }
-
     AGameModeBase* GMBase = LoadedWorld->GetAuthGameMode();
     UE_LOG(LogTemp, Warning, TEXT("AuthGameMode: %s"), *GetNameSafe(GMBase));
-
     AMyGameMode* GM = Cast<AMyGameMode>(GMBase);
     if (!GM)
     {
         UE_LOG(LogTemp, Error, TEXT("GameMode non è MyGameMode. Controlla World Settings della mappa DLC."));
         return;
     }
-
     bWorldBootstrapped = true;
-
     LoadedWorld->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(GM, [GM]()
         {
             GM->InitAfterMapReady();
         }));
-
     if (APlayerController* PC = UGameplayStatics::GetPlayerController(LoadedWorld, 0))
     {
         PC->SetInputMode(FInputModeGameOnly());

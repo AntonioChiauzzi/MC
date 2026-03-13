@@ -8,6 +8,7 @@ AWeatherStationActor::AWeatherStationActor()
 void AWeatherStationActor::BeginPlay()
 {
     Super::BeginPlay();
+    ApplyAutoScalingToMesh();
 }
 
 void AWeatherStationActor::ConfigureFromJson(const TSharedPtr<FJsonObject>& Json)
