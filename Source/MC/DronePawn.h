@@ -41,6 +41,8 @@ public:
     virtual FString GetEntityType() const override;
 
     UFUNCTION(BlueprintCallable)
+    FString GetInfoData() const;
+    UFUNCTION(BlueprintCallable)
     void ApplyAutoScalingToMesh();
 
 protected:

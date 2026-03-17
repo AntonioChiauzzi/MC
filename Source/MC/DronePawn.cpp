@@ -99,7 +99,7 @@ void ADronePawn::ConfigureFromJson(const TSharedPtr<FJsonObject>& Json)
     {
         BatteryLevel = 100.0f;
     }
-    if (!(*Params)->TryGetNumberField(TEXT("cropMaturity"), BatteryLevel))
+    if (!(*Params)->TryGetNumberField(TEXT("cropMaturity"), CropMaturity))
     {
         CropMaturity = 0.0f;
     }
