@@ -137,3 +137,10 @@ void ADronePawn::ApplyAutoScalingToMesh()
         }
     }
 }
+FString ADronePawn::ToString() const
+{
+    return FString::Printf(TEXT("[DronePawn] %s\nBattery: %.1f\nCropMaturity: %.2f"),
+        *Super::ToString(),
+        BatteryLevel,
+        CropMaturity);
+}

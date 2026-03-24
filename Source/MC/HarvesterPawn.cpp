@@ -141,3 +141,12 @@ void AHarvesterPawn::ApplyAutoScalingToMesh()
         }
     }
 }
+FString AHarvesterPawn::ToString() const
+{
+    return FString::Printf(
+        TEXT("[Harvester] %s\nBattery: %.1f\nHarvestCapacity: %.1f"),
+        *Super::ToString(),
+        BatteryLevel,
+        HarvestCapacity
+    );
+}

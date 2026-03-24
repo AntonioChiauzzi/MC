@@ -136,3 +136,12 @@ void ATractorPawn::ApplyAutoScalingToMesh()
         }
     }
 }
+
+FString ATractorPawn::ToString() const
+{
+    return FString::Printf(
+        TEXT("[Tractor] %s\nBattery: %.1f"),
+        *Super::ToString(),
+        BatteryLevel
+    );
+}

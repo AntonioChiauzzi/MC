@@ -85,3 +85,26 @@ void AGroundSensorActor::ApplyAutoScalingToMesh()
         }
     }
 }
+
+FString AGroundSensorActor::ToString() const
+{
+    FString ChemicalStr;
+    for (const auto& Pair : SoilChemicalComposition)
+    {
+        ChemicalStr += FString::Printf(TEXT("%s: %.2f, "), *Pair.Key, Pair.Value);
+    }
+    if (ChemicalStr.Len() > 0)
+    {
+        ChemicalStr.LeftChopInline(2);
+    }
+    return FString::Printf(
+        TEXT("[GroundSensor] %s\npH: %.2f\nHumidity: %.1f\nTemp: %.1f°C\nIrradiance: %.1f\nChemicals: {%s}"),
+        *Super::ToString(),
+        SoilpH,
+        SoilHumidity,
+        SoilTemperature,
+        SoilSolarIrradiance,
+        *ChemicalStr
+    );
+}
+

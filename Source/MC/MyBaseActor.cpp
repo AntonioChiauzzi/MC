@@ -37,3 +37,8 @@ FString AMyBaseActor::GetEntityName()
 {
     return Name;
 }
+
+FString AMyBaseActor::ToString() const
+{
+    return FString::Printf(TEXT("ID: %s\nName: %s"), *ID, *Name);
+}
