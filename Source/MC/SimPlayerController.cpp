@@ -134,14 +134,6 @@ void ASimPlayerController::ShowEntityInfo(AMyBaseActor* SelectedActor)
     EntityInfoWidget->SetPositionInViewport(WidgetPosition);
     EntityInfoWidget->SetVisibility(ESlateVisibility::Visible);
     EntityInfoWidget->SetInfo(InfoText);
-    UE_LOG(LogTemp, Warning,
-        TEXT("=== ENTITY INFO ===\nActor: %s\nLocation: %s\nWidgetPos: X=%.1f Y=%.1f\nInfo:\n%s"),
-        *SelectedActor->GetName(),
-        *ActorLocation.ToString(),
-        WidgetPosition.X,
-        WidgetPosition.Y,
-        *InfoText
-    );
 }
 
 void ASimPlayerController::HideEntityInfo()
