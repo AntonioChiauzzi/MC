@@ -42,3 +42,4 @@ protected:
     UPROPERTY(VisibleAnywhere, Category = "Soil Readings")
     TMap<FString, float> SoilChemicalComposition;
 };
+

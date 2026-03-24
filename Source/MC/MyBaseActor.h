@@ -55,7 +55,7 @@ public:
     FVector MaxDimensions = FVector(0.f, 0.f, 0.f);
 
     virtual FString ToString() const;
-
+    
 protected:
     virtual void BeginPlay() override;
 };

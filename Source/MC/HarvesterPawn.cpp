@@ -141,7 +141,6 @@ void AHarvesterPawn::ApplyAutoScalingToMesh()
         }
     }
 }
-
 FString AHarvesterPawn::ToString() const
 {
     return FString::Printf(

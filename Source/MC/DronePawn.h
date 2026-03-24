@@ -41,10 +41,11 @@ public:
     virtual FString GetEntityType() const override;
 
     UFUNCTION(BlueprintCallable)
+    FString GetInfoData() const;
+    UFUNCTION(BlueprintCallable)
     void ApplyAutoScalingToMesh();
-
-
     virtual FString ToString() const override;
 protected:
     virtual void BeginPlay() override;
+    
 };

@@ -98,7 +98,7 @@ FString AGroundSensorActor::ToString() const
         ChemicalStr.LeftChopInline(2);
     }
     return FString::Printf(
-        TEXT("[GroundSensor] %s\npH: %.2f\nHumidity: %.1f\nTemp: %.1f°C\nIrradiance: %.1f\nChemicals: {%s}"),
+        TEXT("[GroundSensor] %s\npH: %.2f\nHumidity: %.1f\nTemp: %.1fÂ°C\nIrradiance: %.1f\nChemicals: {%s}"),
         *Super::ToString(),
         SoilpH,
         SoilHumidity,
@@ -107,3 +107,4 @@ FString AGroundSensorActor::ToString() const
         *ChemicalStr
     );
 }
+
