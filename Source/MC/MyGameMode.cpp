@@ -12,13 +12,21 @@
 
 AMyGameMode::AMyGameMode()
 {
-    PlayerControllerClass = ASimPlayerController::StaticClass();
     DefaultPawnClass = AFreeCamPawn::StaticClass();
     static ConstructorHelpers::FObjectFinder<UEntityRegistryDataAsset> RegistryAssetObj(TEXT("/Game/Data/DA_EntityRegistry.DA_EntityRegistry"));
-
     if (RegistryAssetObj.Succeeded())
     {
         RegistryConfig = RegistryAssetObj.Object;
+    }
+    static ConstructorHelpers::FClassFinder<APlayerController> SimPCBlueprintClass(TEXT("/Game/Blueprint/BP_SimPlayerController"));
+    if (SimPCBlueprintClass.Succeeded())
+    {
+        PlayerControllerClass = SimPCBlueprintClass.Class;
+    }
+    else
+    {
+        PlayerControllerClass = ASimPlayerController::StaticClass();
+        UE_LOG(LogTemp, Warning, TEXT("BP_SimPlayerController non trovato, uso ASimPlayerController C++"));
     }
 }
 

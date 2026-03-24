@@ -19,7 +19,8 @@ public class MC : ModuleRules
             "DesktopPlatform",
             "PakFile",
             "AssetRegistry",
-            "glTFRuntime"
+            "glTFRuntime",
+            "UMG"
         });
 
         PrivateDependencyModuleNames.AddRange(new string[] {

@@ -99,7 +99,7 @@ void ADronePawn::ConfigureFromJson(const TSharedPtr<FJsonObject>& Json)
     {
         BatteryLevel = 100.0f;
     }
-    if (!(*Params)->TryGetNumberField(TEXT("cropMaturity"), BatteryLevel))
+    if (!(*Params)->TryGetNumberField(TEXT("cropMaturity"), CropMaturity))
     {
         CropMaturity = 0.0f;
     }
@@ -136,4 +136,11 @@ void ADronePawn::ApplyAutoScalingToMesh()
             UE_LOG(LogTemp, Warning, TEXT("Harvester intero scalato a: %f"), UniformScale);
         }
     }
+}
+FString ADronePawn::ToString() const
+{
+    return FString::Printf(TEXT("[DronePawn] %s\nBattery: %.1f\nCropMaturity: %.2f"),
+        *Super::ToString(),
+        BatteryLevel,
+        CropMaturity);
 }

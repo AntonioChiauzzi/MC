@@ -25,6 +25,7 @@ public:
     virtual void ConfigureFromJson(const TSharedPtr<FJsonObject>& Json) override;
     virtual void SaveToJson(const TSharedPtr<FJsonObject>& Json) override;
     virtual FString GetEntityType() const override;
+    virtual FString ToString() const override;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
     float BatteryLevel;

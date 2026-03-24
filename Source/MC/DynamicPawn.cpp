@@ -110,3 +110,7 @@ void ADynamicPawn::AutoOrientModelFromBounds()
 		*Size.ToString(),
 		*NewRot.ToString());
 }
+FString ADynamicPawn::ToString() const
+{
+	return FString::Printf(TEXT("[DynamicPawn] %s"), *Super::ToString());
+}

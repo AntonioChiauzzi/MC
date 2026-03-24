@@ -62,3 +62,14 @@ void AWeatherStationActor::ApplyAutoScalingToMesh()
         }
     }
 }
+
+FString AWeatherStationActor::ToString() const
+{
+    return FString::Printf(
+        TEXT("[WeatherStation] %s | AirTemp: %.1f°C | AirHumidity: %.1f%% | WindSpeed: %.1f km/h"),
+        *Super::ToString(),
+        AirTemperature,
+        AirHumidity,
+        WindSpeed
+    );
+}

@@ -38,6 +38,7 @@ public:
     UFUNCTION(BlueprintCallable)
     void AutoOrientModelFromBounds();
 
+    virtual FString ToString() const override;
 protected:
     virtual void BeginPlay() override;
     
