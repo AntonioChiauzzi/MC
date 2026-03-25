@@ -36,4 +36,10 @@ protected:
     void SetUiMouseMode();
 
     bool bUiMouseModeEnabled = false;
+
+    UPROPERTY(EditDefaultsOnly, Category = "UI")
+    TSubclassOf<UUserWidget> CrosshairWidgetClass;
+
+    UPROPERTY()
+    UUserWidget* CrosshairWidget = nullptr;
 };

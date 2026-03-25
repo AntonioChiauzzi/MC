@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/BoxComponent.h"
 #include "MyBaseActor.generated.h"
 
 UCLASS()
@@ -41,11 +42,9 @@ public:
     FString RuntimeOverrideAssetPath;
 
     FString GetEntityId();
-
     FString GetEntityName();
 
     virtual void Tick(float DeltaTime) override;
-
     virtual FString GetEntityType() const { return TEXT("BaseEntity"); }
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Assets")
@@ -55,7 +54,11 @@ public:
     FVector MaxDimensions = FVector(0.f, 0.f, 0.f);
 
     virtual FString ToString() const;
-    
+
 protected:
     virtual void BeginPlay() override;
+
+private:
+    void SetupCollisionForAllMeshes();
+    void CreateClickableCollision(UStaticMeshComponent* Mesh);
 };

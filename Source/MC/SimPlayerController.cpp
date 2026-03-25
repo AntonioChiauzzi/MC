@@ -15,13 +15,20 @@ void ASimPlayerController::BeginPlay()
     if (EntityInfoWidgetClass)
     {
         EntityInfoWidget = CreateWidget<UEntityInfoWidget>(this, EntityInfoWidgetClass);
-        UE_LOG(LogTemp, Warning, TEXT("Widget class: %s"), *EntityInfoWidgetClass->GetName());
         if (EntityInfoWidget)
         {
             EntityInfoWidget->AddToViewport(100);
             EntityInfoWidget->SetPositionInViewport(FVector2D(20.f, 20.f));
             EntityInfoWidget->SetAlignmentInViewport(FVector2D(0.f, 0.f));
             EntityInfoWidget->SetVisibility(ESlateVisibility::Collapsed);
+        }
+    }
+    if (CrosshairWidgetClass)
+    {
+        CrosshairWidget = CreateWidget<UUserWidget>(this, CrosshairWidgetClass);
+        if (CrosshairWidget)
+        {
+            CrosshairWidget->AddToViewport(9999);
         }
     }
     UE_LOG(LogTemp, Warning, TEXT("SimPlayerController BeginPlay: %s"), *GetClass()->GetName());
