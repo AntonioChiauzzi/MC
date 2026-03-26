@@ -33,9 +33,6 @@ public:
     UPROPERTY(BlueprintReadOnly, Category = "Setup")
     bool bExternalMapRequested = false;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Setup")
-    bool bWorldBootstrapped = false;
-
     UFUNCTION(BlueprintCallable)
     bool ShouldLoadExternalMap() const;
 
@@ -47,6 +44,9 @@ public:
 
     UFUNCTION()
     void OnMapLoaded(UWorld* LoadedWorld);
+
+    UPROPERTY()
+    bool bExternalMapLoaded = false;
 
 private:
     bool LoadRuntimeConfigFromCommandLine();

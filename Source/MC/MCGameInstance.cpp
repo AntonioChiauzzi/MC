@@ -32,7 +32,6 @@ void UMCGameInstance::ResetRuntimeDefaults()
     UserRefreshRate = 20.0f;
     bLaunchConfigLoaded = false;
     bExternalMapRequested = false;
-    bWorldBootstrapped = false;
 }
 
 void UMCGameInstance::Init()
@@ -41,13 +40,10 @@ void UMCGameInstance::Init()
     ResetRuntimeDefaults();
     bLaunchConfigLoaded = LoadRuntimeConfigFromCommandLine();
     UE_LOG(LogTemp, Warning,
-        TEXT("MCGameInstance::Init | ConfigLoaded=%s | ExternalRequested=%s | SavedMapPath=%s | BaseDataPath=%s | UserMapSize=%s | RefreshRate=%.2f"),
+        TEXT("MCGameInstance::Init | ConfigLoaded=%s | ExternalRequested=%s | SavedMapPath=%s"),
         bLaunchConfigLoaded ? TEXT("true") : TEXT("false"),
         bExternalMapRequested ? TEXT("true") : TEXT("false"),
-        *SavedMapPath,
-        *SavedBaseDataPath,
-        *UserMapSize.ToString(),
-        UserRefreshRate);
+        *SavedMapPath);
 }
 
 bool UMCGameInstance::HasValidLaunchConfig() const
@@ -167,6 +163,7 @@ bool UMCGameInstance::LoadRuntimeConfigFromCommandLine()
 
 void UMCGameInstance::UploadMap()
 {
+    UE_LOG(LogTemp, Warning, TEXT("UploadMap CALLED"));
     if (SavedMapPath.IsEmpty())
     {
         UE_LOG(LogTemp, Error, TEXT("SavedMapPath vuoto"));
@@ -176,16 +173,15 @@ void UMCGameInstance::UploadMap()
     UE_LOG(LogTemp, Warning, TEXT("SourcePakAbs: %s"), *SourcePakAbs);
     if (!IFileManager::Get().FileExists(*SourcePakAbs))
     {
-        UE_LOG(LogTemp, Error, TEXT("Pak non trovato: %s"), *SourcePakAbs);
+        UE_LOG(LogTemp, Error, TEXT("Pak non trovato"));
         return;
     }
     FString DestPakAbs;
     if (!CopyPakToSaved(SourcePakAbs, DestPakAbs))
     {
-        UE_LOG(LogTemp, Error, TEXT("Copia pak fallita verso Saved. Source=%s"), *SourcePakAbs);
+        UE_LOG(LogTemp, Error, TEXT("Copia pak fallita"));
         return;
     }
-    UE_LOG(LogTemp, Warning, TEXT("Pak copiato in: %s"), *DestPakAbs);
     IPlatformFile& CurrentPlatformFile = FPlatformFileManager::Get().GetPlatformFile();
     FPakPlatformFile* PakPlatformFile = nullptr;
     if (CurrentPlatformFile.GetName() == FString(TEXT("PakFile")))
@@ -198,10 +194,9 @@ void UMCGameInstance::UploadMap()
         PakPlatformFile->Initialize(&CurrentPlatformFile, TEXT(""));
         FPlatformFileManager::Get().SetPlatformFile(*PakPlatformFile);
     }
-    const int32 PakOrder = 0;
-    if (!PakPlatformFile->Mount(*DestPakAbs, PakOrder))
+    if (!PakPlatformFile->Mount(*DestPakAbs, 0))
     {
-        UE_LOG(LogTemp, Error, TEXT("Mount fallito: %s"), *DestPakAbs);
+        UE_LOG(LogTemp, Error, TEXT("Mount fallito"));
         return;
     }
     UE_LOG(LogTemp, Warning, TEXT("Pak montato: %s"), *DestPakAbs);
@@ -212,27 +207,24 @@ void UMCGameInstance::UploadMap()
 
 void UMCGameInstance::OnMapLoaded(UWorld* LoadedWorld)
 {
+    UE_LOG(LogTemp, Warning, TEXT("OnMapLoaded TRIGGERED"));
     FCoreUObjectDelegates::PostLoadMapWithWorld.RemoveAll(this);
-    UE_LOG(LogTemp, Warning, TEXT("OnMapLoaded: World=%s  Map=%s"),
-        *GetNameSafe(LoadedWorld),
-        LoadedWorld ? *LoadedWorld->GetMapName() : TEXT("NULL"));
     if (!LoadedWorld)
-    {
         return;
-    }
-    AGameModeBase* GMBase = LoadedWorld->GetAuthGameMode();
-    UE_LOG(LogTemp, Warning, TEXT("AuthGameMode: %s"), *GetNameSafe(GMBase));
-    AMyGameMode* GM = Cast<AMyGameMode>(GMBase);
+    UE_LOG(LogTemp, Warning, TEXT("OnMapLoaded: %s"), *LoadedWorld->GetName());
+    AMyGameMode* GM = Cast<AMyGameMode>(LoadedWorld->GetAuthGameMode());
     if (!GM)
     {
-        UE_LOG(LogTemp, Error, TEXT("GameMode non è MyGameMode. Controlla World Settings della mappa DLC."));
+        UE_LOG(LogTemp, Error, TEXT("GameMode non valido"));
         return;
     }
-    bWorldBootstrapped = true;
-    LoadedWorld->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(GM, [GM]()
-        {
-            GM->InitAfterMapReady();
-        }));
+    LoadedWorld->GetTimerManager().SetTimerForNextTick(
+        FTimerDelegate::CreateWeakLambda(GM, [GM]()
+            {
+                UE_LOG(LogTemp, Warning, TEXT("InitAfterMapReady chiamato da GameInstance"));
+                GM->InitAfterMapReady();
+            })
+    );
     if (APlayerController* PC = UGameplayStatics::GetPlayerController(LoadedWorld, 0))
     {
         PC->SetInputMode(FInputModeGameOnly());

@@ -326,7 +326,7 @@ AActor* UWorldStateManager::SpawnEntityFromJson(const TSharedPtr<FJsonObject>& O
     if (LocLogical.X < MinLogical.X || LocLogical.X > MaxLogical.X ||
         LocLogical.Y < MinLogical.Y || LocLogical.Y > MaxLogical.Y)
     {
-        UE_LOG(LogTemp, Warning, TEXT("Entità %s fuori Landscape (Logical)! Loc=%s  LogicalMin=%s  LogicalMax=%s"),
+        UE_LOG(LogTemp, Warning, TEXT("Entita' %s fuori Landscape (Logical)! Loc=%s  LogicalMin=%s  LogicalMax=%s"),
             *Type, *LocLogical.ToString(), *MinLogical.ToString(), *MaxLogical.ToString());
         return nullptr;
     }
@@ -391,7 +391,7 @@ void UWorldStateManager::RemoveOldInstances()
         }
     }
     SpawnedEntities.Empty();
-    UE_LOG(LogTemp, Warning, TEXT("Entità distrutte"));
+    UE_LOG(LogTemp, Warning, TEXT("Entita' distrutte"));
 }
 
 void UWorldStateManager::SaveEntities()

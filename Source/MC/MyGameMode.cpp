@@ -33,40 +33,19 @@ AMyGameMode::AMyGameMode()
 void AMyGameMode::BeginPlay()
 {
     Super::BeginPlay();
-    const FString CurrentLevelName = UGameplayStatics::GetCurrentLevelName(this, true);
-    const FString WorldName = GetWorld() ? GetWorld()->GetName() : TEXT("NO_WORLD");
-    UE_LOG(LogTemp, Warning,
-        TEXT("AMyGameMode::BeginPlay() | World=%s | Level=%s | GameMode=%s"),
-        *WorldName,
-        *CurrentLevelName,
-        *GetClass()->GetName());
     UMCGameInstance* GI = Cast<UMCGameInstance>(GetGameInstance());
-    if (!GI)
+    if (!GI) return;
+    if (GI->ShouldLoadExternalMap() && !GI->bExternalMapLoaded)
     {
-        UE_LOG(LogTemp, Error, TEXT("BeginPlay: GameInstance nulla"));
-        return;
-    }
-    if (!GI->HasValidLaunchConfig())
-    {
-        UE_LOG(LogTemp, Error, TEXT("BeginPlay: runtime config mancante o invalida. Nessun bootstrap del mondo."));
-        return;
-    }
-    if (GI->bWorldBootstrapped)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("BeginPlay: mondo già bootstrapato, skip."));
-        return;
-    }
-    if (GI->ShouldLoadExternalMap())
-    {
-        UE_LOG(LogTemp, Warning, TEXT("BeginPlay: external map richiesta, avvio UploadMap()."));
+        UE_LOG(LogTemp, Warning, TEXT("Carico mappa esterna (PRIMA VOLTA)"));
+
+        GI->bExternalMapLoaded = true;
         GI->UploadMap();
         return;
     }
-    UE_LOG(LogTemp, Warning, TEXT("BeginPlay: avvio flusso default su mappa locale."));
-    GI->bWorldBootstrapped = true;
+    UE_LOG(LogTemp, Warning, TEXT("InitAfterMapReady default"));
     InitAfterMapReady();
 }
-
 void AMyGameMode::InitAfterMapReady()
 {
     UE_LOG(LogTemp, Warning, TEXT("InitAfterMapReady: START"));
