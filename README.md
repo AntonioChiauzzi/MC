@@ -11,3 +11,6 @@ Come funziona:
 
 Il progetto utilizza file JSON per il salvataggio delle entità spawnate e delle variabili di ambiente, questi JSON sono situati nel percorso
 "MC/Content/Data/entities.json" e "MC/Content/Data/environment.json"
+
+È neccessario un plugin da installare negli altri progetti per produrre mappe esterne da importare: 
+Plugin: ExternalMaps link: https://github.com/AntonioChiauzzi/ExternalMaps
