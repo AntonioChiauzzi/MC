@@ -73,15 +73,21 @@ bool UMCGameInstance::LoadRuntimeConfigFromCommandLine()
 {
     ResetRuntimeDefaults();
     FString ConfigPath;
-    if (!FParse::Value(FCommandLine::Get(), TEXT("config="), ConfigPath))
+    if (FParse::Value(FCommandLine::Get(), TEXT("config="), ConfigPath))
     {
-        UE_LOG(LogTemp, Error, TEXT("Parametro -config mancante."));
-        return false;
+        ConfigPath = ConfigPath.TrimQuotes();
+        UE_LOG(LogTemp, Warning, TEXT("Config da command line: %s"), *ConfigPath);
     }
-    ConfigPath = ConfigPath.TrimQuotes();
+    else
+    {
+        ConfigPath = FPaths::ConvertRelativePathToFull(
+            FPaths::ProjectDir() / TEXT("Launcher/runtime_launch_config.json")
+        );
+        UE_LOG(LogTemp, Warning, TEXT("Config fallback: %s"), *ConfigPath);
+    }
     if (ConfigPath.IsEmpty())
     {
-        UE_LOG(LogTemp, Error, TEXT("Parametro -config vuoto."));
+        UE_LOG(LogTemp, Error, TEXT("Config path vuoto."));
         return false;
     }
     if (!FPaths::FileExists(ConfigPath))
@@ -155,8 +161,10 @@ bool UMCGameInstance::LoadRuntimeConfigFromCommandLine()
             *SavedDynamicGltfPath,
             *UserMapSize.ToString(),
             UserRefreshRate);
+
         return true;
     }
+
     UE_LOG(LogTemp, Error, TEXT("Runtime config: Mode non supportato: %s"), *Mode);
     return false;
 }

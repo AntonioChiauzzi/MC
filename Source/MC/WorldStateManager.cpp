@@ -111,25 +111,34 @@ void UWorldStateManager::LoadAssetOverridesFromProject()
 
 void UWorldStateManager::LoadEntities()
 {
-    const FString FilePath = BaseDataPath;
+    const FString FilePath = FPaths::ConvertRelativePathToFull(BaseDataPath);
+    UE_LOG(LogTemp, Warning, TEXT("=== LoadEntities DEBUG ==="));
+    UE_LOG(LogTemp, Warning, TEXT("Path: %s"), *FilePath);
+    UE_LOG(LogTemp, Warning, TEXT("Exists: %d"), FPaths::FileExists(FilePath));
+    if (FilePath.IsEmpty())
+    {
+        UE_LOG(LogTemp, Error, TEXT("LoadEntities: BaseDataPath vuoto"));
+        return;
+    }
     FString Json;
     if (!FFileHelper::LoadFileToString(Json, *FilePath))
     {
-        UE_LOG(LogTemp, Warning, TEXT("LoadEntities: impossibile leggere %s"), *FilePath);
+        UE_LOG(LogTemp, Error, TEXT("LoadEntities: impossibile leggere %s"), *FilePath);
         return;
     }
     TSharedPtr<FJsonObject> Root;
     if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json), Root) || !Root.IsValid())
     {
-        UE_LOG(LogTemp, Warning, TEXT("LoadEntities: JSON non valido in %s"), *FilePath);
+        UE_LOG(LogTemp, Error, TEXT("LoadEntities: JSON non valido in %s"), *FilePath);
         return;
     }
     const TArray<TSharedPtr<FJsonValue>>* Arr = nullptr;
     if (!Root->TryGetArrayField(TEXT("entities"), Arr))
     {
-        UE_LOG(LogTemp, Warning, TEXT("LoadEntities: campo 'entities' mancante in %s"), *FilePath);
+        UE_LOG(LogTemp, Error, TEXT("LoadEntities: campo 'entities' mancante in %s"), *FilePath);
         return;
     }
+    UE_LOG(LogTemp, Warning, TEXT("LoadEntities: trovate %d entita"), Arr->Num());
     for (const auto& V : *Arr)
     {
         const TSharedPtr<FJsonObject> Obj = V->AsObject();
