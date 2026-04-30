@@ -37,9 +37,6 @@ public:
     bool ShouldLoadExternalMap() const;
 
     UFUNCTION(BlueprintCallable)
-    bool HasValidLaunchConfig() const;
-
-    UFUNCTION(BlueprintCallable)
     void UploadMap();
 
     UFUNCTION()

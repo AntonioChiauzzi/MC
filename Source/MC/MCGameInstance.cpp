@@ -46,10 +46,6 @@ void UMCGameInstance::Init()
         *SavedMapPath);
 }
 
-bool UMCGameInstance::HasValidLaunchConfig() const
-{
-    return bLaunchConfigLoaded;
-}
 
 bool UMCGameInstance::ShouldLoadExternalMap() const
 {

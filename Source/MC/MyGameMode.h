@@ -39,10 +39,6 @@ private:
 
     void SaveWorld();
 
-    void SetupWorldManagerPaths(UMCGameInstance* GI);
-
-    void ResizeMap(UMCGameInstance* GI);
-
 protected:
     void Load();
     FTimerHandle LoadTimerHandle;

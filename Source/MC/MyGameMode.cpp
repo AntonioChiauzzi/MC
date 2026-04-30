@@ -46,6 +46,7 @@ void AMyGameMode::BeginPlay()
     UE_LOG(LogTemp, Warning, TEXT("InitAfterMapReady default"));
     InitAfterMapReady();
 }
+
 void AMyGameMode::InitAfterMapReady()
 {
     UE_LOG(LogTemp, Warning, TEXT("InitAfterMapReady: START"));
@@ -116,17 +117,6 @@ void AMyGameMode::Load()
     }
     WorldManager->RemoveOldInstances();
     WorldManager->LoadEntities();
-}
-
-void AMyGameMode::ResizeMap(UMCGameInstance* GI) {
-    if (GI->UserMapSize.X > 0 && GI->UserMapSize.Y > 0)
-    {
-        WorldManager->ResizeLandscape(GI->UserMapSize);
-    }
-    else
-    {
-        WorldManager->UpdateLandscapeBounds();
-    }
 }
 
 void AMyGameMode::AfterResizeNextTick()
