@@ -10,7 +10,7 @@ class USceneComponent;
 class UStaticMeshComponent;
 
 UCLASS()
-class MC_API ADynamicPawn : public AMyBaseActor, public IEntityConfigurable
+class MC_API ADynamicPawn : public AMyBaseActor
 {
     GENERATED_BODY()
 
@@ -25,12 +25,8 @@ public:
 
     virtual void Tick(float DeltaTime) override;
 
-    virtual void ConfigureFromJson(const TSharedPtr<FJsonObject>& Json) override;
-    virtual void SaveToJson(const TSharedPtr<FJsonObject>& Json) override;
     virtual FString GetEntityType() const override;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-    float BatteryLevel;
 
     UFUNCTION(BlueprintCallable)
     void ApplyAutoScalingToMesh();

@@ -39,27 +39,6 @@ void ADynamicPawn::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
-void ADynamicPawn::ConfigureFromJson(const TSharedPtr<FJsonObject>& Json)
-{
-	const TSharedPtr<FJsonObject>* Params;
-	if (Json->TryGetObjectField(TEXT("params"), Params))
-	{
-		if (!(*Params)->TryGetNumberField(TEXT("battery"), BatteryLevel))
-		{
-			BatteryLevel = 100.0f;
-		}
-	}
-	else
-	{
-		BatteryLevel = 100.0f;
-	}
-}
-
-void ADynamicPawn::SaveToJson(const TSharedPtr<FJsonObject>& Json)
-{
-	Json->SetNumberField(TEXT("battery"), BatteryLevel);
-}
-
 FString ADynamicPawn::GetEntityType() const
 {
 	return TEXT("Dynamic");
